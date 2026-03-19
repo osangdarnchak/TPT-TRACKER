@@ -1320,47 +1320,40 @@
     #col-toggle-btn { display: none; }
     #tv-mode-btn    { display: none; }
     #sidebar-toggle-btn { display: none !important; }
-    .sidebar {
-      transform: translateX(-100%);
-    }
-    .sidebar.open {
-      transform: translateX(0);
-    }
-    .main {
-      margin-left: 0;
-    }
-    .hamburger {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px; height: 36px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      cursor: pointer;
-      color: var(--text);
-      font-size: 18px;
-    }
-    .stats-row { grid-template-columns: repeat(3, 1fr); }
-    /* Dashboard stats row บน mobile ใช้ inline style override ด้วย */
-    .stats-row[style*="repeat(5"] { grid-template-columns: repeat(3, 1fr) !important; }
-    .stats-row[style*="repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
-    /* Machine card mobile */
-    .mc-card { width: auto !important; min-width: 0; }
-    .mt-machines { padding: 10px 12px; gap: 8px; }
-    /* Jump nav wrap */
-    .mt-areas { }
-    .form-row { grid-template-columns: 1fr; }
-    .content { padding: 12px; }
+    .sidebar-collapse-tab { display: none !important; }
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; overflow-x: hidden; }
+    .content { padding: 12px; overflow-x: hidden; }
     .topbar { padding: 12px 14px; }
     .topbar h1 { font-size: 15px; }
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 99;
-      display: none;
+    .hamburger {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--bg3);
+      cursor: pointer; color: var(--text); font-size: 18px;
     }
+    .form-row { grid-template-columns: 1fr; }
+    /* Stat Cards */
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .dash-stats { grid-template-columns: repeat(5, 1fr) !important; gap: 5px !important; }
+    .dash-stats .stat-card:last-child { display: none; }
+    .dash-stats .stat-card { padding: 8px 5px; }
+    .dash-stats .stat-card .label { font-size: 8px; letter-spacing: 0.2px; min-height: 20px; }
+    .dash-stats .stat-card .value { font-size: 20px; margin-top: 4px; }
+    .dash-stats .stat-card .sub { font-size: 9px; }
+    /* Job cards */
+    .job-cards { grid-template-columns: 1fr !important; }
+    .job-card { max-width: 100%; box-sizing: border-box; }
+    .table-wrap { overflow-x: hidden; }
+    /* Mobile dept filter */
+    .mobile-dept-filter { display: flex !important; flex-wrap: wrap; gap: 4px; width: 100%; }
+    /* Machine cards */
+    .mt-machines { display: grid !important; grid-template-columns: repeat(2, 1fr); padding: 10px 12px; gap: 8px; }
+    .mc-card { width: auto !important; height: 160px; box-sizing: border-box; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; display: none; }
     .overlay.show { display: block; }
+  }
   }
 </style>
 </head>
