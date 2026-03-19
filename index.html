@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
 <title>Production Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -261,6 +261,72 @@
   body.tv-mode .due-chip { font-size: 10px; }
   body.tv-mode .status-dot { font-size: 11px; }
   body.tv-mode .btn-sm { padding: 3px 7px; font-size: 11px; }
+  /* ซ่อน filter bar ของ Dashboard ใน TV mode */
+  body.tv-mode .dash-filter-bar { display: none !important; }
+
+  /* TV CARD GRID */
+  .tv-card-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .tv-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .tv-filter-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+  }
+  .tv-filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tv-filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .tv-grid {
+    flex: 1;
+    display: grid;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+    align-content: start;
+    align-items: stretch;
+  }
+  .tv-job-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+    min-height: 0;
+    justify-content: flex-start;
+    align-self: stretch;
+  }
+  .tv-job-card.tv-active { border-left-color: var(--green); }
+  .tv-job-card.tv-hold   { border-left-color: var(--yellow); }
+  .tv-job-card.tv-over   { border-left-color: var(--red); }
+  .tv-card-top { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+  .tv-card-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; line-height: 1.3; padding-top: 1px; }
+  .tv-card-meta { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tv-card-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .tv-card-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+  .tv-card-procs { display: flex; gap: 3px; flex-wrap: wrap; }
 
   /* TV clock bar */
   .tv-clock-bar {
@@ -716,7 +782,6 @@
   .drag-handle:active { cursor: grabbing; }
 
   /* MACHINE QUEUE */
-  .mc-queue { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
   .mc-queue-item {
     display: flex;
     align-items: center;
@@ -761,7 +826,13 @@
     color: var(--accent2);
     flex-shrink: 0;
   }
-  .mc-card-expanded { min-height: auto !important; }
+  .mc-compact {
+    min-height: auto !important;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  .mc-compact .mc-actions { display: none; }
+  .mc-compact:hover .mc-actions { display: flex; }
 
   /* MC dropdown in table */
   .mc-dd-wrap { position: relative; display: inline-block; }
@@ -873,10 +944,11 @@
   .mt-area-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
   .mt-area-header .area-stats { display: flex; gap: 8px; }
   .mt-machines {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     padding: 14px 16px;
+    align-items: start;
   }
   .mc-card {
     border-radius: 8px;
@@ -885,7 +957,21 @@
     padding: 12px;
     position: relative;
     transition: border-color 0.15s, box-shadow 0.15s;
-    min-height: 110px;
+    width: 200px;
+    height: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .mc-queue {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
   }
   .mc-card.mc-running {
     border-color: rgba(34,197,94,0.4);
@@ -893,7 +979,8 @@
   }
   .mc-card.mc-idle {
     border-color: var(--border);
-    opacity: 0.8;
+    opacity: 1;
+    background: var(--bg3);
   }
   .mc-card.mc-repair {
     border-color: rgba(239,68,68,0.4);
@@ -901,7 +988,9 @@
   }
   .mc-card.mc-off {
     border-color: var(--border);
-    opacity: 0.45;
+    border-style: dashed;
+    opacity: 0.4;
+    background: var(--bg2);
   }
   .mc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
   .mc-no {
@@ -1016,7 +1105,14 @@
   .mc-stat-rep { background: rgba(239,68,68,0.15); color: #f87171; }
 
   /* ===== MOBILE CARD LAYOUT ===== */
-  .job-cards { display: flex; flex-direction: column; gap: 10px; }
+  .job-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 480px) and (max-width: 768px) {
+    .job-cards { grid-template-columns: 1fr 1fr; }
+  }
   .job-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -1024,7 +1120,10 @@
     padding: 13px 14px;
     position: relative;
     transition: border-color 0.15s;
+    display: flex;
+    flex-direction: column;
   }
+  .jc-actions { margin-top: auto; }
   .job-card.jc-hold { border-left: 3px solid var(--yellow); }
   .job-card.jc-active { border-left: 3px solid var(--green); }
   .job-card.jc-over { border-left: 3px solid var(--red); }
@@ -1312,8 +1411,9 @@
       <span class="tv-clock" id="tv-clock"></span>
     </div>
     <div class="topbar-right">
-      <button class="btn" id="easy-read-btn" onclick="toggleEasyRead()" title="โหมดอ่านง่าย">
-        👁 อ่านง่าย
+      <button class="btn" id="theme-toggle-btn" onclick="toggleTheme()" title="สลับ Dark/Light Mode" style="padding:7px 12px;display:flex;align-items:center;gap:6px">
+        <span id="theme-icon">🌙</span>
+        <span id="theme-label">Dark</span>
       </button>
       <button class="btn" onclick="syncFromSheet()" style="border-color:var(--accent2);color:var(--accent2)" title="Refresh ข้อมูล">
         ⟳ Refresh
@@ -1901,9 +2001,12 @@ function renderPage() {
   else renderDept(el, currentPage);
   applyColVisibility();
   updateClearDemoBtn();
+
 }
 
-let dashSort = localStorage.getItem('dashSort') || 'due'; // 'due' | 'added'
+let dashSort = localStorage.getItem('dashSort') || 'due';
+let dashSearch = '';
+let dashDeptFilter = 'all';
 
 function renderDashboard(el) {
   const active = jobs.filter(j => j.status !== 'done');
@@ -1922,8 +2025,26 @@ function renderDashboard(el) {
     });
   }
 
+  // Dept filter
+  if (dashDeptFilter !== 'all') {
+    const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === dashDeptFilter);
+    sorted = sorted.filter(j => j.dept === deptName);
+  }
+
+  // Search filter
+  const q = dashSearch.trim().toLowerCase();
+  if (q) {
+    sorted = sorted.filter(j =>
+      (j.partName || '').toLowerCase().includes(q) ||
+      (j.projectNo || '').toLowerCase().includes(q) ||
+      (j.customer || '').toLowerCase().includes(q) ||
+      (j.drawing || '').toLowerCase().includes(q) ||
+      (j.machine || '').toLowerCase().includes(q)
+    );
+  }
+
   el.innerHTML = `
-    <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stats-row" style="grid-template-columns:repeat(5,1fr) minmax(160px,auto)">
       <div class="stat-card">
         <div class="label">Active</div>
         <div class="value" style="color:var(--accent)">${active.length}</div>
@@ -1949,14 +2070,50 @@ function renderDashboard(el) {
         <div class="value" style="color:var(--yellow)">${warn}</div>
         <div class="sub">งาน</div>
       </div>
+      <div class="stat-card">
+        <div class="label" style="margin-bottom:8px">แผนก</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <button class="btn btn-sm ${dashDeptFilter==='all'?'btn-primary':''}" onclick="setDashDeptFilter('all')" style="font-size:10px;padding:2px 8px">ทั้งหมด</button>
+          ${DEPTS.map(d => {
+            const k = DEPT_KEYS[d];
+            const cnt = active.filter(j => j.dept === d).length;
+            if (cnt === 0) return '';
+            const isAct = dashDeptFilter === k;
+            const sty = 'font-size:10px;padding:2px 8px;opacity:' + (isAct?'1':'0.6') + ';' + (isAct?'outline:2px solid currentColor;outline-offset:1px':'');
+            return '<button class="btn btn-sm dept-' + k + '" style="' + sty + '" onclick="setDashDeptFilter(\'' + k + '\')">' + DEPT_LABELS[k] + ' <span style="opacity:0.7">(' + cnt + ')</span></button>';
+          }).join('')}
+        </div>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="position:relative;flex:1;min-width:180px;max-width:320px">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
+        <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
+          value="${dashSearch}" oninput="onDashSearch(this.value)"
+          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        ${dashSearch ? `<button onclick="onDashSearch('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">✕</button>` : ''}
+      </div>
       <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
       <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
       <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date</button>
+      ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
     </div>
-    ${renderTable(sorted, true)}
+    ${tvMode ? renderTvCards(sorted) : renderTable(sorted, true)}
   `;
+  if (q || document.activeElement?.id === 'dash-search') {
+    const inp = document.getElementById('dash-search');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }
+}
+
+function setDashDeptFilter(k) {
+  dashDeptFilter = k;
+  renderDashboard(document.getElementById('main-content'));
+}
+
+function onDashSearch(val) {
+  dashSearch = val;
+  renderDashboard(document.getElementById('main-content'));
 }
 
 function setDashSort(mode) {
@@ -2315,7 +2472,6 @@ function renderMachines(el) {
     const machineCards = area.machines.map((m, mIdx) => {
       const queue = getQueueForMachine(m.no);
       const hasJobs = queue.length > 0;
-      // If machine is off but has jobs queued, show as off (not auto-running)
       const effectiveStatus = (hasJobs && m.status !== 'off') ? 'running' : m.status;
 
       let queueHtml = '';
@@ -2336,10 +2492,14 @@ function renderMachines(el) {
               <span class="q-rank">${isActive ? '▶' : qi}</span>
               <span class="q-name" title="${j.partName}">${j.partName}</span>
               ${procName ? `<span class="q-proc">${procName}</span>` : ''}
+              <button onclick="removeFromQueue('${j.id}','${m.no}',event)" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0" title="เอาออกจากคิว">✕</button>
             </div>`;
           }).join('') +
         `</div>`;
       }
+
+      // ไม่ใช้ compact mode
+      const isCompact = false;
 
       return `<div class="mc-card mc-${effectiveStatus} ${hasJobs ? 'mc-card-expanded' : ''}" onclick="openMcStatusModal(${aIdx},${mIdx})">
         <div class="mc-top">
@@ -2358,17 +2518,25 @@ function renderMachines(el) {
       </div>`;
     }).join('');
 
-    return `<div class="mt-area">
-      <div class="mt-area-header">
-        <h3>${area.name}</h3>
+    // Count total jobs queued in this section
+    const aTotalQueue = area.machines.reduce((sum, m) => sum + getQueueForMachine(m.no).length, 0);
+    const isCollapsed = localStorage.getItem('area_collapsed_' + area.id) === '1';
+
+    return `<div class="mt-area" id="area-section-${aIdx}">
+      <div class="mt-area-header" style="cursor:pointer" onclick="toggleAreaCollapse('${area.id}')">
+        <h3 style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--muted);transition:transform 0.2s;display:inline-block;transform:rotate(${isCollapsed?'-90deg':'0deg'})"">▼</span>
+          ${area.name}
+        </h3>
         <div class="area-stats">
           ${aRun > 0 ? `<span class="mc-stat-chip mc-stat-run">▶ ${aRun}</span>` : ''}
           ${aRep > 0 ? `<span class="mc-stat-chip mc-stat-rep">🔧 ${aRep}</span>` : ''}
           <span class="mc-stat-chip mc-stat-idle">${area.machines.length} เครื่อง</span>
+          ${aTotalQueue > 0 ? `<span class="mc-stat-chip" style="background:rgba(59,130,246,0.1);color:var(--accent)">📋 ${aTotalQueue} งาน</span>` : ''}
         </div>
-        <button class="btn btn-sm" style="margin-left:4px" onclick="openEditAreaModal(${aIdx})" title="แก้ไข / ลบพื้นที่">✎</button>
+        <button class="btn btn-sm" style="margin-left:4px" onclick="event.stopPropagation();openEditAreaModal(${aIdx})" title="แก้ไข / ลบพื้นที่">✎</button>
       </div>
-      <div class="mt-machines">
+      <div class="mt-machines" style="display:${isCollapsed?'none':'flex'}">
         ${machineCards}
       </div>
     </div>`;
@@ -2376,7 +2544,26 @@ function renderMachines(el) {
 
   const addAreaBtn = `<button class="btn" style="margin-top:4px;width:100%;justify-content:center" onclick="openAddAreaModal()">＋ เพิ่มพื้นที่ใหม่</button>`;
 
-  el.innerHTML = summaryHtml + `<div class="mt-areas">${areasHtml}</div>` + `<div style="padding:8px 0">${addAreaBtn}</div>`;
+  // Section jump nav
+  const jumpNav = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+    <span style="font-size:11px;color:var(--muted);align-self:center">ไปที่:</span>
+    ${machineAreas.map((area, i) => {
+      const aRun2 = area.machines.filter(m => m.status === 'running').length;
+      return `<button class="btn btn-sm" onclick="document.getElementById('area-section-${i}').scrollIntoView({behavior:'smooth'})"
+        style="${aRun2 > 0 ? 'border-color:var(--green);color:var(--green)' : ''}">
+        ${area.name}${aRun2 > 0 ? ` ▶${aRun2}` : ''}
+      </button>`;
+    }).join('')}
+  </div>`;
+
+  el.innerHTML = summaryHtml + jumpNav + `<div class="mt-areas">${areasHtml}</div>` + `<div style="padding:8px 0">${addAreaBtn}</div>`;
+}
+
+function toggleAreaCollapse(areaId) {
+  const key = 'area_collapsed_' + areaId;
+  const isCollapsed = localStorage.getItem(key) === '1';
+  localStorage.setItem(key, isCollapsed ? '0' : '1');
+  renderPage();
 }
 
 function openMcStatusModal(aIdx, mIdx) {
@@ -2398,6 +2585,7 @@ function setMcStatus(status) {
   if (_mcEditAreaIdx === null) return;
   machineAreas[_mcEditAreaIdx].machines[_mcEditMcIdx].status = status;
   save();
+  syncToSheet('saveMachines', { areas: machineAreas });
   closeModal('mcStatusModal');
   renderPage();
 }
@@ -2423,7 +2611,7 @@ function confirmEditArea() {
   const name = document.getElementById('edit-area-name').value.trim();
   if (!name) return;
   machineAreas[_editAreaIdx].name = name;
-  save(); closeModal('editAreaModal'); renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas }); closeModal('editAreaModal'); renderPage();
 }
 function showAreaDeleteConfirm() {
   const area = machineAreas[_editAreaIdx];
@@ -2438,7 +2626,7 @@ function hideAreaDeleteConfirm() {
 }
 function doDeleteArea() {
   machineAreas.splice(_editAreaIdx, 1);
-  save(); closeModal('editAreaModal'); renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas }); closeModal('editAreaModal'); renderPage();
 }
 
 function openEditMachineModal(aIdx, mIdx) {
@@ -2455,7 +2643,7 @@ function confirmEditMachine() {
   const no = document.getElementById('edit-machine-no').value.trim();
   if (!no) return;
   machineAreas[_editMachineAreaIdx].machines[_editMachineIdx].no = no;
-  save(); closeModal('editMachineModal'); renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas }); closeModal('editMachineModal'); renderPage();
 }
 function showMachineDeleteConfirm() {
   const m = machineAreas[_editMachineAreaIdx].machines[_editMachineIdx];
@@ -2470,7 +2658,7 @@ function hideMachineDeleteConfirm() {
 }
 function doDeleteMachine() {
   machineAreas[_editMachineAreaIdx].machines.splice(_editMachineIdx, 1);
-  save(); closeModal('editMachineModal'); renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas }); closeModal('editMachineModal'); renderPage();
 }
 
 function openAddMachineModal(aIdx) {
@@ -2482,11 +2670,10 @@ function openAddMachineModal(aIdx) {
 
 function confirmAddMachine() {
   const no = document.getElementById('new-mc-no').value.trim();
-  if (!no) { alert('กรุณากรอก Machine No.'); return; }
+  if (!no) return;
   machineAreas[_mcAddAreaIdx].machines.push({ id: genId(), no, status: 'idle' });
-  save();
-  closeModal('addMachineModal');
-  renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas });
+  closeModal('addMachineModal'); renderPage();
 }
 
 function openAddAreaModal() {
@@ -2496,19 +2683,84 @@ function openAddAreaModal() {
 
 function confirmAddArea() {
   const name = document.getElementById('new-area-name').value.trim();
-  if (!name) { alert('กรุณากรอกชื่อพื้นที่'); return; }
+  if (!name) return;
   machineAreas.push({ id: genId(), name, machines: [] });
-  save();
-  closeModal('addAreaModal');
-  renderPage();
+  save(); syncToSheet('saveMachines', { areas: machineAreas });
+  closeModal('addAreaModal'); renderPage();
 }
+
+let histSearch = '';
+let histMonthFilter = 'all';
+let histCustomerFilter = 'all';
+let histDeptFilter = 'all';
 
 function renderHistory(el) {
   if (history.length === 0) {
     el.innerHTML = `<div style="color:var(--muted);padding:32px;text-align:center">ยังไม่มีงานที่เสร็จสิ้น</div>`;
     return;
   }
-  const cards = history.map(j => `
+
+  const months = [...new Set(history.map(j => {
+    if (!j.completedAt) return null;
+    const d = new Date(j.completedAt);
+    if (isNaN(d)) return null;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }).filter(Boolean))].sort().reverse();
+
+  const customers = [...new Set(history.map(j => j.customer).filter(Boolean))].sort();
+  const depts = [...new Set(history.map(j => j.dept).filter(Boolean))].sort();
+
+  let filtered = [...history];
+  if (histMonthFilter !== 'all') {
+    filtered = filtered.filter(j => {
+      if (!j.completedAt) return false;
+      const d = new Date(j.completedAt);
+      if (isNaN(d)) return false;
+      const m = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      return m === histMonthFilter;
+    });
+  }
+  if (histCustomerFilter !== 'all') filtered = filtered.filter(j => j.customer === histCustomerFilter);
+  if (histDeptFilter !== 'all') filtered = filtered.filter(j => j.dept === histDeptFilter);
+  if (histSearch.trim()) {
+    const q = histSearch.trim().toLowerCase();
+    filtered = filtered.filter(j =>
+      (j.partName||'').toLowerCase().includes(q) ||
+      (j.projectNo||'').toLowerCase().includes(q) ||
+      (j.customer||'').toLowerCase().includes(q) ||
+      (j.drawing||'').toLowerCase().includes(q)
+    );
+  }
+
+  const thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const monthLabel = m => { const [y,mo] = m.split('-'); return `${thMonths[Number(mo)]} ${Number(y)+543}`; };
+
+  const filterBar = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="position:relative;flex:1;min-width:180px;max-width:280px">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
+        <input type="text" id="hist-search" placeholder="ค้นหา..." value="${histSearch}"
+          oninput="onHistSearch(this.value)"
+          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+      </div>
+      <select onchange="histMonthFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
+        <option value="all" ${histMonthFilter==='all'?'selected':''}>📅 ทุกเดือน</option>
+        ${months.map(m => `<option value="${m}" ${histMonthFilter===m?'selected':''}>${monthLabel(m)}</option>`).join('')}
+      </select>
+      <select onchange="histCustomerFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
+        <option value="all" ${histCustomerFilter==='all'?'selected':''}>🏭 ทุก Customer</option>
+        ${customers.map(c => `<option value="${c}" ${histCustomerFilter===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+      <select onchange="histDeptFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
+        <option value="all" ${histDeptFilter==='all'?'selected':''}>📋 ทุกแผนก</option>
+        ${depts.map(d => { const k = DEPT_KEYS[d]||'NA'; return `<option value="${d}" ${histDeptFilter===d?'selected':''}>${DEPT_LABELS[k]||d}</option>`; }).join('')}
+      </select>
+      <span style="font-size:11px;color:var(--muted)">${filtered.length} / ${history.length} งาน</span>
+    </div>`;
+
+  const cards = filtered.length === 0
+    ? `<div style="color:var(--muted);padding:32px;text-align:center">ไม่มีงานที่ตรงเงื่อนไข</div>`
+    : filtered.map(j => `
     <div class="history-card">
       <div class="history-info">
         <div class="hname">${j.partName || '—'}</div>
@@ -2519,7 +2771,17 @@ function renderHistory(el) {
       <button class="btn btn-sm" onclick="restoreJob('${j.id}')">↩ นำกลับ</button>
     </div>
   `).join('');
-  el.innerHTML = `<div>${cards}</div>`;
+
+  el.innerHTML = filterBar + `<div>${cards}</div>`;
+  if (histSearch) {
+    const inp = document.getElementById('hist-search');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }
+}
+
+function onHistSearch(val) {
+  histSearch = val;
+  renderHistory(document.getElementById('main-content'));
 }
 
 // ========== ACTIONS ==========
@@ -2774,18 +3036,17 @@ function closeModal(id) {
 }
 
 function moveCardOrder(orderKey, jobId, dir) {
-  // Get current list for this dept
-  const deptKey = orderKey.replace('order_', '');
-  const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === deptKey);
+  const deptK = orderKey.replace('order_', '');
+  const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === deptK);
   const deptJobs = jobs.filter(j => j.status !== 'done' && j.dept === deptName);
   let order = JSON.parse(localStorage.getItem(orderKey) || 'null');
-  // Build current order from rendered list
-  if (!order) order = deptJobs.map(j => j.id);
+  if (!order || order.length === 0) order = deptJobs.map(j => j.id);
+  // เพิ่ม id ที่หายไปจาก order
+  deptJobs.forEach(j => { if (!order.includes(j.id)) order.push(j.id); });
   const idx = order.indexOf(jobId);
   if (idx === -1) return;
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= order.length) return;
-  // Swap
   [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
   localStorage.setItem(orderKey, JSON.stringify(order));
   renderPage();
@@ -2897,6 +3158,20 @@ function quickSetDept(id, dept, e) {
   renderPage();
 }
 
+function removeFromQueue(jobId, machineNo, e) {
+  e.stopPropagation();
+  const j = jobs.find(x => x.id === jobId);
+  if (!j) return;
+  j.machine = '';
+  save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
+  // Remove from queue order
+  const key = 'mcqueue_' + machineNo.trim().toUpperCase();
+  const order = JSON.parse(localStorage.getItem(key) || '[]').filter(id => id !== jobId);
+  localStorage.setItem(key, JSON.stringify(order));
+  renderPage();
+}
+
 // ========== ASSIGN JOB TO MACHINE ==========
 let _openAssignDD = null;
 
@@ -2919,26 +3194,33 @@ function toggleAssignDD(machineNo, e) {
     .filter(j => j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done')
     .map(j => j.id);
 
+  // Sort by projectNo then drawing
   const available = jobs.filter(j =>
     j.status !== 'done' &&
     !alreadyOnThis.includes(j.id)
-  );
+  ).sort((a, b) => {
+    const pa = (a.projectNo || '') + (a.drawing || '');
+    const pb = (b.projectNo || '') + (b.drawing || '');
+    return pa.localeCompare(pb);
+  });
 
   // Build list
   const listHtml = available.length === 0
     ? `<div class="mc-assign-empty">ไม่มีงานที่สามารถเพิ่มได้</div>`
     : available.map(j => {
-        const days = daysLeft(j.due);
-        let dueStr = formatDate(j.due);
-        let dueColor = 'var(--muted)';
-        if (days !== null) {
-          if (days < 0) dueColor = 'var(--red)';
-          else if (days <= 7) dueColor = 'var(--yellow)';
-        }
-        const currentMc = j.machine ? `<span style="color:var(--accent2);font-family:'IBM Plex Mono',monospace"> · ${j.machine}</span>` : '';
+        const currentMc = j.machine
+          ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);padding:1px 5px;border-radius:3px;flex-shrink:0">${j.machine}</span>`
+          : '';
         return `<div class="mc-assign-item" onclick="assignJobToMachine('${j.id}','${machineNo}',event)">
-          <div class="ai-name">${j.partName}</div>
-          <div class="ai-meta">${j.projectNo || ''} · ${j.customer || ''} · Due: <span style="color:${dueColor}">${dueStr}</span>${currentMc}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+            <div style="min-width:0;flex:1">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:12px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.projectNo||'—'} (${j.drawing||'—'})</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.partName||''} · ${j.customer||''}</div>
+            </div>
+            ${currentMc}
+          </div>
         </div>`;
       }).join('');
 
@@ -3073,22 +3355,21 @@ function mcqDragEnd(e) {
   renderPage();
 }
 
-// ========== EASY READ MODE ==========
-let easyRead = localStorage.getItem('easyRead') === '1';
+// ========== THEME (DARK / LIGHT) ==========
+let isLightMode = localStorage.getItem('lightMode') === '1';
 
-function applyEasyRead() {
-  document.body.classList.toggle('easy-read', easyRead);
-  const btn = document.getElementById('easy-read-btn');
-  if (btn) {
-    btn.classList.toggle('active-mode', easyRead);
-    btn.textContent = easyRead ? '👁 ปกติ' : '👁 อ่านง่าย';
-  }
+function applyTheme() {
+  document.body.classList.toggle('easy-read', isLightMode);
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (icon)  icon.textContent  = isLightMode ? '☀️' : '🌙';
+  if (label) label.textContent = isLightMode ? 'Light' : 'Dark';
 }
 
-function toggleEasyRead() {
-  easyRead = !easyRead;
-  localStorage.setItem('easyRead', easyRead ? '1' : '0');
-  applyEasyRead();
+function toggleTheme() {
+  isLightMode = !isLightMode;
+  localStorage.setItem('lightMode', isLightMode ? '1' : '0');
+  applyTheme();
 }
 
 // ========== COLUMN VISIBILITY ==========
@@ -3201,7 +3482,7 @@ let tvMode = false;
 let tvClockInterval = null;
 let tvRefreshInterval = null;
 let tvPageInterval = null;
-let tvPageToggle = false; // false=dashboard, true=machines
+let tvFilter = 'all';
 
 function toggleTvMode() {
   tvMode = !tvMode;
@@ -3215,15 +3496,9 @@ function toggleTvMode() {
       document.documentElement.requestFullscreen().catch(() => {});
     }
     startTvClock();
-    // Auto-refresh every 30s — sync from Sheet
-    tvRefreshInterval = setInterval(() => { syncFromSheet(); }, 30000);
-    // Page switching every 30s: Dashboard ↔ Machine Tracking
-    tvPageToggle = false;
+    tvFilter = 'all';
     navigate('dashboard');
-    tvPageInterval = setInterval(() => {
-      tvPageToggle = !tvPageToggle;
-      navigate(tvPageToggle ? 'machines' : 'dashboard');
-    }, 30000);
+    tvRefreshInterval = setInterval(() => { syncFromSheet(); }, 30000);
   } else {
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
@@ -3233,6 +3508,87 @@ function toggleTvMode() {
     if (tvPageInterval)    { clearInterval(tvPageInterval);    tvPageInterval = null; }
     renderPage();
   }
+}
+
+function setTvFilter(f) {
+  tvFilter = f;
+  renderPage();
+}
+
+function renderTvCards(active) {
+  let list = [...active];
+  if (tvFilter === 'active')  list = list.filter(j => j.status === 'active');
+  if (tvFilter === 'hold')    list = list.filter(j => j.status === 'stop');
+  if (tvFilter === 'overdue') list = list.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0);
+
+  // Auto-fit columns based on count
+  const count = list.length || 1;
+  const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
+  const rows = Math.ceil(count / cols);
+
+  const nActive = active.filter(j => j.status === 'active').length;
+  const nHold = active.filter(j => j.status === 'stop').length;
+  const nOver = active.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0).length;
+
+  const filterBar = `<div class="tv-filter-bar" style="justify-content:space-between">
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="tv-filter-btn ${tvFilter==='all'?'active':''}" onclick="setTvFilter('all')">ทั้งหมด (${active.length})</button>
+      <button class="tv-filter-btn ${tvFilter==='active'?'active':''}" onclick="setTvFilter('active')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle"></span>In Process (${nActive})</button>
+      <button class="tv-filter-btn ${tvFilter==='hold'?'active':''}" onclick="setTvFilter('hold')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-right:4px;vertical-align:middle"></span>On Hold (${nHold})</button>
+      <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
+    </div>
+    <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols} คอลัมน์ × ${rows} แถว</span>
+  </div>`;
+
+  const cards = list.map(j => {
+    const days = daysLeft(j.due);
+    let daysChip = '';
+    if (days !== null) {
+      if (days < 0) daysChip = `<span class="due-chip due-over">+${Math.abs(days)}d</span>`;
+      else if (days === 0) daysChip = `<span class="due-chip due-over">Today!</span>`;
+      else if (days <= 7) daysChip = `<span class="due-chip due-warn">${days}d left</span>`;
+      else daysChip = `<span class="due-chip due-ok">${days}d left</span>`;
+    }
+    const procs = j.processes || [];
+    const cur = j.currentProc;
+    const procChips = procs.map((p, i) =>
+      `<span class="proc-chip ${cur===i?'active':''}" style="font-size:10px;padding:2px 6px">${p}</span>`
+    ).join('');
+    const overdue = days !== null && days < 0;
+    const cardClass = j.status === 'stop' ? 'tv-hold' : overdue ? 'tv-over' : 'tv-active';
+    const deptK = deptKey(j.dept || 'N/A');
+
+    // Progress info only (no bar)
+    const totalProcs = procs.length;
+    const doneProcs = cur !== null && cur !== undefined ? cur : 0;
+
+    return `<div class="tv-job-card ${cardClass}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1">
+          <span class="status-dot-inner ${j.status==='active'?'active-dot':'stop-dot'}" style="flex-shrink:0;width:9px;height:9px"></span>
+          <span class="tv-card-name" title="${j.partName}">${j.partName || '—'}</span>
+        </div>
+        <span class="dept-badge dept-${deptK}" style="font-size:9px;padding:2px 6px;flex-shrink:0">${DEPT_LABELS[deptK]||j.dept}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <div class="tv-card-meta" style="flex:1">${j.projectNo||''} · ${j.drawing||''} · ${j.customer||''} · ×${j.qty||'—'}</div>
+        ${j.machine ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);padding:1px 6px;border-radius:4px;flex-shrink:0">${j.machine}</span>` : ''}
+      </div>
+      <div class="tv-card-row">
+        <span class="tv-card-label">Due</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px">${formatDate(j.due)}</span>
+        ${daysChip}
+      </div>
+      ${procs.length > 0 ? `<div class="tv-card-procs">${procChips}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="tv-card-area">
+    ${filterBar}
+    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr)">
+      ${cards || '<div style="color:var(--muted);padding:20px">ไม่มีงานที่ตรงเงื่อนไข</div>'}
+    </div>
+  </div>`;
 }
 
 function startTvClock() {
@@ -3272,10 +3628,9 @@ document.addEventListener('fullscreenchange', () => {
 // ========== INIT ==========
 loadDemoData();
 initMachineAreas();
-applyEasyRead();
+applyTheme();
 updateLastUpdated();
 renderPage();
-// Sync จาก Google Sheet ตอนเปิดแอป
 syncFromSheet();
 
 // Re-render on resize (mobile ↔ desktop)
