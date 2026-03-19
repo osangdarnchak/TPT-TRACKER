@@ -1707,6 +1707,29 @@ async function syncToSheet(action, payload) {
   }
 }
 
+function parseSheetDate(val) {
+  if (!val) return '';
+  // Date object หรือ string ที่มี GMT
+  if (typeof val === 'string' && (val.includes('GMT') || val.includes('UTC') || val.match(/\w+ \w+ \d+ \d{4}/))) {
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+  const s = String(val).trim();
+  // dd/mm/yy หรือ dd/mm/yyyy
+  const parts = s.split('/');
+  if (parts.length === 3) {
+    const yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+    return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  // yyyy-mm-dd ใช้ได้เลย
+  return s;
+}
+
 function parseJobFromSheet(j) {
   // รวม Process1-11 เป็น array
   const processes = [];
@@ -1716,13 +1739,13 @@ function parseJobFromSheet(j) {
   }
   return {
     id: j.id || genId(),
-    date: j.date || '',
+    date: parseSheetDate(j.date),
     projectNo: j.projectNo || '',
     customer: j.customer || '',
     partName: j.partName || '',
     drawing: j.drawing || '',
     qty: j.qty || '',
-    due: j.due || '',
+    due: parseSheetDate(j.due),
     processes,
     dept: j.dept || 'N/A',
     currentProc: j.currentProc !== '' && j.currentProc !== undefined ? Number(j.currentProc) : null,
