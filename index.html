@@ -470,10 +470,27 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
   }
-  .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .stat-card .value { font-size: 24px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; margin-top: 4px; }
-  .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat-card .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    min-height: 30px;
+    line-height: 1.4;
+  }
+  .stat-card .value {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: auto;
+    line-height: 1;
+  }
+  .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   /* TABLE */
   .table-wrap {
@@ -1297,6 +1314,9 @@
     <div class="topbar-right">
       <button class="btn" id="easy-read-btn" onclick="toggleEasyRead()" title="โหมดอ่านง่าย">
         👁 อ่านง่าย
+      </button>
+      <button class="btn" onclick="syncFromSheet()" style="border-color:var(--accent2);color:var(--accent2)" title="Refresh ข้อมูล">
+        ⟳ Refresh
       </button>
       <button class="btn" id="tv-mode-btn" onclick="toggleTvMode()" title="TV / Full Screen Mode" style="padding:7px 10px">
         <span id="tv-icon">⛶</span>
@@ -2745,6 +2765,7 @@ function quickProcClick(id, idx) {
   if (!j) return;
   j.currentProc = (j.currentProc === idx) ? null : idx;
   save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
 }
 
@@ -2837,6 +2858,7 @@ function quickToggleStatus(id) {
   if (!j) return;
   j.status = j.status === 'active' ? 'stop' : 'active';
   save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
 }
 
@@ -2871,6 +2893,7 @@ function quickSetDept(id, dept, e) {
   if (!j) return;
   j.dept = dept;
   save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
 }
 
@@ -2949,6 +2972,7 @@ function assignJobToMachine(jobId, machineNo, e) {
   if (!j) return;
   j.machine = machineNo;
   save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
   closeAssignDDs();
   renderPage();
 }
@@ -3007,6 +3031,7 @@ function quickSetMachine(jobId, machineNo, e) {
   if (!j) return;
   j.machine = machineNo;
   save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
 }
 
