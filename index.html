@@ -534,8 +534,12 @@
   .dash-stats { grid-template-columns: repeat(6, 1fr); }
   .mobile-dept-filter { display: none; }
   @media (max-width: 768px) {
-    .dash-stats { grid-template-columns: repeat(5, 1fr); }
+    .dash-stats { grid-template-columns: repeat(5, 1fr); gap: 6px; }
     .dash-stats .stat-card:last-child { display: none; }
+    .dash-stats .stat-card { padding: 8px 6px; }
+    .dash-stats .stat-card .label { font-size: 8px; letter-spacing: 0.3px; min-height: 20px; }
+    .dash-stats .stat-card .value { font-size: 22px; margin-top: 4px; }
+    .dash-stats .stat-card .sub { font-size: 9px; }
     .mobile-dept-filter { display: flex !important; flex-wrap: wrap; gap: 4px; width: 100%; }
     .sidebar-collapse-tab { display: none !important; }
     .mt-machines {
@@ -2112,8 +2116,23 @@ function renderDashboard(el) {
         </div>
       </div>
     </div>
-    <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <div style="display:none" class="mobile-dept-filter">
+    <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="position:relative;flex:1">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
+        <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
+          value="${dashSearch}" oninput="onDashSearch(this.value)"
+          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        ${dashSearch ? `<button onclick="onDashSearch('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">✕</button>` : ''}
+      </div>
+    </div>
+    <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
+      <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
+      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date</button>
+      ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
+    </div>
+    <div class="dash-filter-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="mobile-dept-filter">
         ${DEPTS.map(d => {
           const k = DEPT_KEYS[d];
           const cnt = active.filter(j => j.dept === d).length;
@@ -2123,17 +2142,6 @@ function renderDashboard(el) {
           return '<button class="btn btn-sm dept-' + k + '" style="' + sty + '" onclick="setDashDeptFilter(\'' + k + '\')">' + DEPT_LABELS[k] + ' <span style="opacity:0.7">(' + cnt + ')</span></button>';
         }).join('')}
       </div>
-      <div style="position:relative;flex:1;min-width:180px;max-width:320px">
-        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
-        <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
-          value="${dashSearch}" oninput="onDashSearch(this.value)"
-          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
-        ${dashSearch ? `<button onclick="onDashSearch('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">✕</button>` : ''}
-      </div>
-      <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
-      <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
-      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date</button>
-      ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
     </div>
     ${tvMode ? renderTvCards(sorted) : renderTable(sorted, true)}
   `;
