@@ -531,6 +531,21 @@
     gap: 12px;
     margin-bottom: 20px;
   }
+  .dash-stats { grid-template-columns: repeat(6, 1fr); }
+  .mobile-dept-filter { display: none; }
+  @media (max-width: 768px) {
+    .dash-stats { grid-template-columns: repeat(5, 1fr); }
+    .dash-stats .stat-card:last-child { display: none; }
+    .mobile-dept-filter { display: flex !important; flex-wrap: wrap; gap: 4px; width: 100%; }
+    .sidebar-collapse-tab { display: none !important; }
+    .mt-machines {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr);
+      padding: 10px 12px;
+      gap: 8px;
+    }
+    .mc-card { width: auto !important; height: 160px; }
+  }
   .stat-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -964,6 +979,10 @@
     flex-direction: column;
     overflow: hidden;
   }
+  @media (max-width: 768px) {
+    .mc-card { width: calc(50vw - 28px); height: 160px; }
+    .mt-machines { padding: 10px 12px; gap: 8px; }
+  }
   .mc-queue {
     margin-top: 6px;
     display: flex;
@@ -1318,7 +1337,15 @@
       color: var(--text);
       font-size: 18px;
     }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    /* Dashboard stats row บน mobile ใช้ inline style override ด้วย */
+    .stats-row[style*="repeat(5"] { grid-template-columns: repeat(3, 1fr) !important; }
+    .stats-row[style*="repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+    /* Machine card mobile */
+    .mc-card { width: auto !important; min-width: 0; }
+    .mt-machines { padding: 10px 12px; gap: 8px; }
+    /* Jump nav wrap */
+    .mt-areas { }
     .form-row { grid-template-columns: 1fr; }
     .content { padding: 12px; }
     .topbar { padding: 12px 14px; }
@@ -2044,7 +2071,7 @@ function renderDashboard(el) {
   }
 
   el.innerHTML = `
-    <div class="stats-row" style="grid-template-columns:repeat(5,1fr) minmax(160px,auto)">
+    <div class="stats-row dash-stats">
       <div class="stat-card">
         <div class="label">Active</div>
         <div class="value" style="color:var(--accent)">${active.length}</div>
@@ -2086,6 +2113,16 @@ function renderDashboard(el) {
       </div>
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:none" class="mobile-dept-filter">
+        ${DEPTS.map(d => {
+          const k = DEPT_KEYS[d];
+          const cnt = active.filter(j => j.dept === d).length;
+          if (cnt === 0) return '';
+          const isAct = dashDeptFilter === k;
+          const sty = 'font-size:10px;padding:2px 8px;opacity:' + (isAct?'1':'0.6') + ';' + (isAct?'outline:2px solid currentColor;outline-offset:1px':'');
+          return '<button class="btn btn-sm dept-' + k + '" style="' + sty + '" onclick="setDashDeptFilter(\'' + k + '\')">' + DEPT_LABELS[k] + ' <span style="opacity:0.7">(' + cnt + ')</span></button>';
+        }).join('')}
+      </div>
       <div style="position:relative;flex:1;min-width:180px;max-width:320px">
         <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
         <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
