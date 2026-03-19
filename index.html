@@ -1132,6 +1132,7 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 10px;
+    overflow: hidden;
   }
   @media (min-width: 480px) and (max-width: 768px) {
     .job-cards { grid-template-columns: 1fr 1fr; }
@@ -1145,8 +1146,23 @@
     transition: border-color 0.15s;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
   }
-  .jc-actions { margin-top: auto; }
+  .jc-actions {
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .jc-actions .btn {
+    flex: 1;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  @media (max-width: 768px) {
+    .jc-actions { padding-top: 10px; }
+  }
   .job-card.jc-hold { border-left: 3px solid var(--yellow); }
   .job-card.jc-active { border-left: 3px solid var(--green); }
   .job-card.jc-over { border-left: 3px solid var(--red); }
