@@ -1,0 +1,3241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #151820;
+    --bg3: #1c2030;
+    --border: #2a2f3e;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --orange: #f97316;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --card: #161b27;
+    --font-base: 14px;
+    --row-pad: 8px;
+  }
+
+  /* ===== EASY READ MODE ===== */
+  body.easy-read {
+    --bg: #f0f4f8;
+    --bg2: #ffffff;
+    --bg3: #e8edf2;
+    --border: #c8d0da;
+    --accent: #1d4ed8;
+    --accent2: #0369a1;
+    --green: #15803d;
+    --yellow: #92400e;
+    --red: #b91c1c;
+    --orange: #c2410c;
+    --text: #0f172a;
+    --muted: #334155;
+    --card: #ffffff;
+    --font-base: 17px;
+    --row-pad: 13px;
+    font-size: 17px;
+  }
+  body.easy-read .sidebar { background: #1e293b; border-color: #334155; }
+  body.easy-read .sidebar-logo .title { color: #60a5fa; }
+  body.easy-read .sidebar-logo .sub { color: #94a3b8; }
+  body.easy-read .nav-item { color: #94a3b8; }
+  body.easy-read .nav-item:hover { background: #273548; color: #e2e8f0; }
+  body.easy-read .nav-item.active { background: rgba(59,130,246,0.2); color: #93c5fd; border-left-color: #3b82f6; }
+  body.easy-read .nav-section { color: #64748b; }
+  body.easy-read .badge { background: #273548; color: #94a3b8; }
+  body.easy-read .nav-item.active .badge { background: rgba(59,130,246,0.2); color: #93c5fd; }
+  body.easy-read .sidebar-bottom { border-color: #334155; color: #64748b; }
+  body.easy-read .sidebar-collapse-tab { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+  body.easy-read th {
+    background: #e2e8f0;
+    color: #1e293b;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  body.easy-read td { padding: var(--row-pad) 12px; font-size: 14px; border-bottom-color: #d1d9e0; }
+  body.easy-read tr:hover td { background: #f8fafc; }
+  body.easy-read .table-wrap { border-color: #c8d0da; }
+  body.easy-read .stat-card { border-color: #c8d0da; }
+  body.easy-read .stat-card .label { color: #334155; }
+  body.easy-read .stat-card .sub { color: #475569; }
+  body.easy-read .topbar { border-color: #c8d0da; }
+  body.easy-read .nav-section { letter-spacing: 1px; }
+
+  body.easy-read .proc-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-color: #94a3b8;
+    color: #334155;
+    background: #e8edf2;
+  }
+  body.easy-read .proc-chip.active {
+    font-size: 13px;
+    background: rgba(3,105,161,0.12);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  body.easy-read .dept-badge { font-size: 13px; padding: 5px 12px; }
+  body.easy-read .dept-MFG11 { background: rgba(29,78,216,0.1); color: #1d4ed8; border-color: rgba(29,78,216,0.3); }
+  body.easy-read .dept-MFG12 { background: rgba(107,33,168,0.1); color: #7e22ce; border-color: rgba(107,33,168,0.3); }
+  body.easy-read .dept-QC    { background: rgba(146,64,14,0.1);  color: #92400e; border-color: rgba(146,64,14,0.3); }
+  body.easy-read .dept-Other { background: rgba(194,65,12,0.1);  color: #c2410c; border-color: rgba(194,65,12,0.3); }
+  body.easy-read .dept-NA    { background: #e8edf2; color: #475569; border-color: #94a3b8; }
+
+  body.easy-read .due-chip { font-size: 12px; }
+  body.easy-read .btn { font-size: 14px; padding: 8px 16px; }
+  body.easy-read .btn-sm { font-size: 13px; padding: 6px 12px; min-height: 36px; }
+  body.easy-read .active-dot { background: #15803d; box-shadow: 0 0 6px 2px rgba(21,128,61,0.5); }
+  body.easy-read .stop-dot   { background: #92400e; box-shadow: 0 0 5px 1px rgba(146,64,14,0.4); }
+
+  body.easy-read .mc-dd-trigger { font-size: 13px; padding: 4px 9px; }
+  body.easy-read .history-card { background: #ffffff; border-color: #c8d0da; }
+  body.easy-read .history-info .hname { font-size: 16px; }
+  body.easy-read .history-info .hmeta,
+  body.easy-read .history-info .hfg { font-size: 13px; color: #334155; }
+  body.easy-read input, body.easy-read select, body.easy-read textarea {
+    background: #f8fafc; border-color: #94a3b8; color: #0f172a; font-size: 14px;
+  }
+  body.easy-read .modal { background: #ffffff; border-color: #c8d0da; }
+  body.easy-read label { color: #334155; }
+  body.easy-read .modal-sub { color: #475569; }
+  body.easy-read .form-row { }
+  body.easy-read .nav-item { font-size: 14px; }
+  body.easy-read .mt-area { border-color: #c8d0da; }
+  body.easy-read .mt-area-header { background: #e2e8f0; border-color: #c8d0da; }
+  body.easy-read .mt-area-header h3 { color: #0f172a; }
+  body.easy-read .mc-card { background: #f8fafc; border-color: #c8d0da; }
+  body.easy-read .mc-card.mc-running { border-color: rgba(21,128,61,0.5); }
+  body.easy-read .mc-card.mc-repair  { border-color: rgba(185,28,28,0.5); }
+  body.easy-read .mc-no { color: #0f172a; font-size: 15px; }
+  body.easy-read .mc-status-label.running { color: #15803d; }
+  body.easy-read .mc-status-label.idle    { color: #475569; }
+  body.easy-read .mc-status-label.repair  { color: #b91c1c; }
+  body.easy-read .mc-status-label.off     { color: #94a3b8; }
+  body.easy-read .q-name { color: #0f172a; font-size: 12px; }
+  body.easy-read .mc-queue-item.q-active { background: rgba(3,105,161,0.1); border-color: rgba(3,105,161,0.3); }
+  body.easy-read .mc-queue-item.q-waiting { border-color: #c8d0da; }
+  body.easy-read .dept-dd-item, body.easy-read .mc-dd-item { color: #0f172a; font-size: 13px; }
+  body.easy-read .dept-dropdown, body.easy-read .mc-dropdown { background: #ffffff; border-color: #c8d0da; }
+  body.easy-read .dept-dd-item:hover, body.easy-read .mc-dd-item:hover { background: #f0f4f8; }
+  body.easy-read .mc-dd-section { color: #475569; }
+  body.easy-read #col-panel { background: #ffffff; border-color: #c8d0da; }
+  body.easy-read .col-check-row { color: #0f172a; font-size: 14px; }
+
+  /* Easy read button indicator */
+  #easy-read-btn.active-mode {
+    background: #fef9c3;
+    border-color: #ca8a04;
+    color: #92400e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 14px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+  .sidebar-logo {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .sidebar-logo .sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: var(--accent); border-left-color: var(--accent); }
+  .nav-item .badge {
+    margin-left: auto;
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .nav-item.active .badge { background: rgba(59,130,246,0.2); color: var(--accent); }
+  .nav-section {
+    padding: 16px 16px 6px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== TV / FULLSCREEN MODE ===== */
+  body.tv-mode {
+    overflow: hidden;
+    height: 100vh;
+  }
+  body.tv-mode .sidebar { display: none; }
+  body.tv-mode .sidebar-collapse-tab { display: none; }
+  body.tv-mode .main { margin-left: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  body.tv-mode .topbar { padding: 8px 16px; flex-shrink: 0; }
+  body.tv-mode .topbar h1 { font-size: 15px; }
+  body.tv-mode .topbar .sub { display: none; }
+  body.tv-mode .content {
+    padding: 10px 16px;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  body.tv-mode .stats-row {
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  body.tv-mode .stat-card { padding: 8px 12px; }
+  body.tv-mode .stat-card .value { font-size: 20px; margin-top: 2px; }
+  body.tv-mode .stat-card .label { font-size: 10px; }
+  body.tv-mode .stat-card .sub { font-size: 10px; }
+  body.tv-mode .table-wrap {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  body.tv-mode .table-wrap > div {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    min-height: 0;
+  }
+  body.tv-mode table { font-size: 11px; }
+  body.tv-mode th { padding: 6px 10px; font-size: 10px; }
+  body.tv-mode td { padding: 6px 8px; }
+  body.tv-mode .proc-chip { font-size: 11px; padding: 4px 9px; }
+  body.tv-mode .dept-badge { font-size: 12px; padding: 4px 10px; }
+  body.tv-mode .due-chip { font-size: 10px; }
+  body.tv-mode .status-dot { font-size: 11px; }
+  body.tv-mode .btn-sm { padding: 3px 7px; font-size: 11px; }
+
+  /* TV clock bar */
+  .tv-clock-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px;
+  }
+  body.tv-mode .tv-clock-bar { display: flex; }
+  .tv-clock {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+    letter-spacing: 1px;
+  }
+  .tv-date {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .tv-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(59,130,246,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(59,130,246,0.2);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* TV scrollbar styling */
+  body.tv-mode ::-webkit-scrollbar { width: 4px; height: 4px; }
+  body.tv-mode ::-webkit-scrollbar-track { background: transparent; }
+  body.tv-mode ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  body.tv-mode .tv-hide { display: none !important; }
+  body.tv-mode table { table-layout: fixed; width: 100%; }
+  body.tv-mode col.col-date   { width: 82px; }
+  body.tv-mode col.col-job    { width: auto; }
+  body.tv-mode col.col-qty    { width: 58px; }
+  body.tv-mode col.col-due    { width: 88px; }
+  body.tv-mode col.col-dept   { width: 80px; }
+  body.tv-mode col.col-proc   { width: 180px; }
+  body.tv-mode col.col-status { width: 110px; }
+
+  /* SIDEBAR COLLAPSED (desktop) */
+  body.sidebar-hidden .sidebar { transform: translateX(-100%); }
+  body.sidebar-hidden .main { margin-left: 0; }
+
+  /* Sidebar collapse tab — sits on right edge of sidebar */
+  .sidebar-collapse-tab {
+    position: fixed;
+    top: 50%;
+    left: 220px;
+    transform: translateY(-50%);
+    z-index: 101;
+    width: 16px;
+    height: 48px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 10px;
+    transition: left 0.3s, background 0.15s, color 0.15s;
+  }
+  .sidebar-collapse-tab:hover { background: var(--bg3); color: var(--text); }
+  body.sidebar-hidden .sidebar-collapse-tab { left: 0; border-left: 1px solid var(--border); border-radius: 0 6px 6px 0; }
+  body.sidebar-hidden .sidebar-collapse-tab .tab-arrow { transform: rotate(180deg); }
+  .tab-arrow { display: inline-block; transition: transform 0.3s; }
+  /* hide on mobile — hamburger handles it */
+  @media (max-width: 768px) { .sidebar-collapse-tab { display: none; } }
+
+  /* COLUMN VISIBILITY */
+  .col-hidden { display: none !important; }
+
+  /* STATUS ICON — clickable dot light */
+  .status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s;
+    background: transparent;
+    border: none;
+  }
+  .status-icon:hover { transform: scale(1.2); }
+  .status-dot-inner {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: box-shadow 0.2s;
+  }
+  .active-dot {
+    background: var(--green);
+    box-shadow: 0 0 6px 2px rgba(34,197,94,0.5);
+    animation: pulse-green 2s infinite;
+  }
+  .stop-dot {
+    background: var(--yellow);
+    box-shadow: 0 0 5px 1px rgba(234,179,8,0.4);
+  }
+  .done-dot {
+    background: var(--muted);
+  }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 5px 2px rgba(34,197,94,0.4); }
+    50%       { box-shadow: 0 0 10px 4px rgba(34,197,94,0.7); }
+  }
+  .status-icon:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 99;
+  }
+  /* easy-read: bigger dot */
+  body.easy-read .status-dot-inner { width: 18px; height: 18px; }
+  body.easy-read .status-icon { width: 34px; height: 34px; }
+
+  /* DEPT inline dropdown */
+  /* COL PANEL checkbox row */
+  .col-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+  }
+  .col-check-row input[type=checkbox] { accent-color: var(--accent); width:14px; height:14px; cursor:pointer; }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s;
+  }
+  .topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar h1 { font-size: 17px; font-weight: 600; }
+  .topbar .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .topbar-right { margin-left: auto; display: flex; gap: 8px; }
+  .btn {
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+  .btn-success { border-color: var(--green); color: var(--green); }
+  .btn-success:hover { background: rgba(34,197,94,0.1); }
+
+  .content { padding: 20px 24px; flex: 1; }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; margin-top: 4px; }
+  .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .table-header h2 { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    white-space: nowrap;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(42,47,62,0.6);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* PROCESS CHIPS */
+  .process-list { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .proc-nav {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    padding-bottom: 3px;
+  }
+  .proc-nav::-webkit-scrollbar { height: 3px; }
+  .proc-nav::-webkit-scrollbar-track { background: var(--bg3); border-radius: 2px; }
+  .proc-nav::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+  .col-proc { overflow: hidden; max-width: 0; }
+  .proc-chip {
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+  .proc-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .proc-chip.active {
+    font-size: 11px;
+    padding: 3px 9px;
+    background: rgba(6,182,212,0.18);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-weight: 700;
+  }
+  body.tv-mode .proc-nav { flex-wrap: wrap; overflow-x: visible; overflow-y: visible; padding-bottom: 0; }
+  body.tv-mode .col-proc { overflow: visible; max-width: none; }
+  body.tv-mode .proc-nav::-webkit-scrollbar { display: none; }
+  @media (max-width: 768px) {
+    .proc-nav { flex-wrap: wrap; overflow-x: visible; padding-bottom: 0; }
+    .col-proc { overflow: visible; max-width: none; }
+  }
+  .proc-chip {
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .proc-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .proc-chip.active {
+    background: rgba(6,182,212,0.15);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  /* DEPT BADGE */
+  .dept-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dept-MFG11 { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .dept-MFG12 { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+  .dept-QC { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
+  .dept-Other { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+  .dept-NA { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .dept-done { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+
+  /* DUE DATE */
+  .due-chip {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  /* Dark mode (default) */
+  .due-over { background: rgba(239,68,68,0.15);  color: #f87171; }
+  .due-warn { background: rgba(234,179,8,0.15);  color: #fbbf24; }
+  .due-ok   { background: rgba(34,197,94,0.1);   color: #4ade80; }
+  /* Light mode (easy-read) */
+  body.easy-read .due-over { background: #fecaca; color: #991b1b; font-weight: 600; }
+  body.easy-read .due-warn { background: #fef08a; color: #713f12; font-weight: 600; }
+  body.easy-read .due-ok   { background: #bbf7d0; color: #14532d; font-weight: 600; }
+
+  /* STATUS */
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-active { background: var(--green); box-shadow: 0 0 5px var(--green); }
+  .dot-stop { background: var(--yellow); }
+  .dot-done { background: var(--muted); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  input, select, textarea {
+    padding: 8px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  /* HAMBURGER */
+  .hamburger { display: none; }
+
+  /* DEPT SELECT INLINE */
+  .dept-select-wrap { display: flex; gap: 4px; flex-wrap: wrap; }
+  .dept-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .dept-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .dept-btn.sel-MFG11 { background: rgba(59,130,246,0.15); color: #60a5fa; border-color: rgba(59,130,246,0.4); }
+  .dept-btn.sel-MFG12 { background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.4); }
+  .dept-btn.sel-QC { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.4); }
+  .dept-btn.sel-Other { background: rgba(249,115,22,0.15); color: #fb923c; border-color: rgba(249,115,22,0.4); }
+  .dept-btn.sel-NA { background: var(--bg3); color: var(--muted); }
+
+  /* ORDER DRAG */
+  .drag-handle { cursor: grab; color: var(--muted); font-size: 16px; padding: 0 6px; }
+  .drag-handle:active { cursor: grabbing; }
+
+  /* MACHINE QUEUE */
+  .mc-queue { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .mc-queue-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: grab;
+    user-select: none;
+  }
+  .mc-queue-item:active { cursor: grabbing; }
+  .mc-queue-item.q-active {
+    background: rgba(6,182,212,0.12);
+    border: 1px solid rgba(6,182,212,0.25);
+  }
+  .mc-queue-item.q-waiting {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    opacity: 0.8;
+  }
+  .mc-queue-item.q-dragging { opacity: 0.3; }
+  .q-rank {
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    width: 14px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .q-icon { font-size: 10px; flex-shrink: 0; }
+  .q-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .q-proc {
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+  .mc-card-expanded { min-height: auto !important; }
+
+  /* MC dropdown in table */
+  .mc-dd-wrap { position: relative; display: inline-block; }
+  .mc-dd-trigger {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    white-space: nowrap;
+    transition: border-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mc-dd-trigger:hover { border-color: var(--accent); color: var(--accent); }
+  .mc-dd-trigger.no-mc { color: var(--border); border-style: dashed; }
+  .mc-dropdown {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 140px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  }
+  .mc-dropdown.open { display: block; }
+  .mc-dd-item {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mc-dd-item:hover { background: var(--bg3); color: var(--text); }
+  .mc-dd-item .mc-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .mc-dd-section {
+    font-size: 9px;
+    color: var(--muted);
+    padding: 4px 10px 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .mc-dd-clear {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--red);
+    transition: background 0.1s;
+  }
+  .mc-dd-clear:hover { background: rgba(239,68,68,0.1); }
+
+  /* Dept dropdown — also fixed to escape table */
+  .dept-dropdown-wrap { position: relative; display: inline-block; }
+  .dept-dropdown {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 110px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  }
+  .dept-dropdown.open { display: block; }
+  .dept-dd-item {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+  }
+  .dept-dd-item:hover { background: var(--bg3); }
+  .mt-areas { display: flex; flex-direction: column; gap: 20px; }
+  .mt-area {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .mt-area-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mt-area-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
+  .mt-area-header .area-stats { display: flex; gap: 8px; }
+  .mt-machines {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .mc-card {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    padding: 12px;
+    position: relative;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    min-height: 110px;
+  }
+  .mc-card.mc-running {
+    border-color: rgba(34,197,94,0.4);
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.1), inset 0 0 20px rgba(34,197,94,0.04);
+  }
+  .mc-card.mc-idle {
+    border-color: var(--border);
+    opacity: 0.8;
+  }
+  .mc-card.mc-repair {
+    border-color: rgba(239,68,68,0.4);
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.1), inset 0 0 20px rgba(239,68,68,0.04);
+  }
+  .mc-card.mc-off {
+    border-color: var(--border);
+    opacity: 0.45;
+  }
+  .mc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+  .mc-no {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .mc-status-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .mc-status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s infinite; }
+  .mc-status-dot.idle { background: var(--muted); }
+  .mc-status-dot.repair { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .mc-status-dot.off { background: #374151; }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 4px var(--green); }
+    50% { box-shadow: 0 0 10px var(--green); }
+  }
+  .mc-status-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .mc-status-label.running { color: var(--green); }
+  .mc-status-label.idle { color: var(--muted); }
+  .mc-status-label.repair { color: var(--red); }
+  .mc-status-label.off { color: #4b5563; }
+  .mc-job {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mc-proc {
+    font-size: 10px;
+    color: var(--accent2);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 2px;
+  }
+  .mc-actions {
+    position: absolute;
+    top: 8px; right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .mc-card:hover .mc-actions { opacity: 1; }
+  .mc-btn {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .mc-btn:hover { color: var(--text); border-color: var(--accent); }
+  .mc-add-btn {
+    border: 1px dashed var(--border);
+    background: transparent;
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .mc-add-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.04); }
+  .mc-add-btn .icon { font-size: 20px; }
+  .area-add-btn {
+    margin: 0 16px 14px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    transition: all 0.15s;
+    width: calc(100% - 32px);
+  }
+  .area-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mc-stat-chip {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .mc-stat-run { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .mc-stat-idle { background: var(--bg3); color: var(--muted); }
+  .mc-stat-rep { background: rgba(239,68,68,0.15); color: #f87171; }
+
+  /* ===== MOBILE CARD LAYOUT ===== */
+  .job-cards { display: flex; flex-direction: column; gap: 10px; }
+  .job-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .job-card.jc-hold { border-left: 3px solid var(--yellow); }
+  .job-card.jc-active { border-left: 3px solid var(--green); }
+  .job-card.jc-over { border-left: 3px solid var(--red); }
+
+  .jc-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .jc-status { flex-shrink: 0; padding-top: 2px; }
+  .jc-main { flex: 1; min-width: 0; }
+  .jc-name {
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .jc-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .jc-right {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .jc-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .jc-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    min-width: 36px;
+    flex-shrink: 0;
+  }
+  .jc-proc { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+  .jc-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .jc-actions .btn { flex: 1; justify-content: center; font-size: 13px; padding: 9px 12px; }
+  .jc-qty-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* Easy read mobile adjustments */
+  body.easy-read .jc-name { font-size: 17px; }
+  body.easy-read .jc-meta { font-size: 13px; }
+  body.easy-read .jc-label { font-size: 11px; }
+  body.easy-read .job-card { padding: 16px; }
+  /* ASSIGN JOB TO MACHINE */
+  .mc-assign-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .mc-assign-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.05); }
+  .mc-assign-wrap { position: relative; }
+  .mc-assign-dd {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    min-width: 240px;
+    max-height: 300px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .mc-assign-dd.open { display: flex; flex-direction: column; }
+  .mc-assign-dd-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    flex-shrink: 0;
+  }
+  .mc-assign-dd-list { overflow-y: auto; flex: 1; padding: 4px; }
+  .mc-assign-item {
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .mc-assign-item:hover { background: var(--bg3); }
+  .mc-assign-item .ai-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .mc-assign-item .ai-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .mc-assign-empty { padding: 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  /* ORDER BUTTONS */
+  .order-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .order-btn {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+    line-height: 1;
+    font-family: inherit;
+  }
+  .order-btn:hover:not([disabled]) { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.08); }
+  .order-btn[disabled] { opacity: 0.2; cursor: default; pointer-events: none; }
+
+  .history-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .history-info { flex: 1; }
+  .history-info .hname { font-weight: 600; font-size: 14px; }
+  .history-info .hmeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .history-info .hfg { font-size: 12px; margin-top: 4px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    #col-toggle-btn { display: none; }
+    #tv-mode-btn    { display: none; }
+    #sidebar-toggle-btn { display: none !important; }
+    .sidebar {
+      transform: translateX(-100%);
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main {
+      margin-left: 0;
+    }
+    .hamburger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      cursor: pointer;
+      color: var(--text);
+      font-size: 18px;
+    }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .content { padding: 12px; }
+    .topbar { padding: 12px 14px; }
+    .topbar h1 { font-size: 15px; }
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 99;
+      display: none;
+    }
+    .overlay.show { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="title">Production</div>
+    <div class="sub">Tracker System</div>
+  </div>
+  <div class="nav-section">หน้าหลัก</div>
+  <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+    <span>📊</span> Dashboard
+    <span class="badge" id="badge-dashboard">0</span>
+  </div>
+  <div class="nav-section">แผนก</div>
+  <div class="nav-item" onclick="navigate('MFG11')" id="nav-MFG11">
+    <span>🔧</span> MC
+    <span class="badge" id="badge-MFG11">0</span>
+  </div>
+  <div class="nav-item" onclick="navigate('MFG12')" id="nav-MFG12">
+    <span>⚙️</span> CL&amp;ML
+    <span class="badge" id="badge-MFG12">0</span>
+  </div>
+  <div class="nav-item" onclick="navigate('Other')" id="nav-Other">
+    <span>🏭</span> Other
+    <span class="badge" id="badge-Other">0</span>
+  </div>
+  <div class="nav-item" onclick="navigate('QC')" id="nav-QC">
+    <span>🔍</span> QC
+    <span class="badge" id="badge-QC">0</span>
+  </div>
+  <div class="nav-item" onclick="navigate('NA')" id="nav-NA">
+    <span>📋</span> N/A
+    <span class="badge" id="badge-NA">0</span>
+  </div>
+  <div class="nav-section">ระบบ</div>
+  <div class="nav-item" onclick="navigate('machines')" id="nav-machines">
+    <span>🖥️</span> Machine Tracking
+  </div>
+  <div class="nav-item" onclick="navigate('history')" id="nav-history">
+    <span>📁</span> Job Record
+    <span class="badge" id="badge-history">0</span>
+  </div>
+  <div class="sidebar-bottom">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+      <button class="btn btn-primary" id="topbar-add-btn" onclick="openAddModal()" style="justify-content:center;width:100%">+ เพิ่มงาน</button>
+      <button class="btn" onclick="syncFromSheet()" style="justify-content:center;width:100%;border-color:var(--accent2);color:var(--accent2)">⟳ Refresh ข้อมูล</button>
+      <button class="btn" id="col-toggle-btn" onclick="toggleColPanel()" title="เลือกคอลัมน์ที่ต้องการแสดง" style="justify-content:center;width:100%">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="1" width="3" height="12" rx="1" fill="currentColor" opacity="0.5"/><rect x="5.5" y="1" width="3" height="12" rx="1" fill="currentColor"/><rect x="10" y="1" width="3" height="12" rx="1" fill="currentColor" opacity="0.5"/></svg>
+        View
+      </button>
+      <button class="btn" id="clear-demo-btn" onclick="openClearDemoModal()" style="justify-content:center;width:100%;border-color:var(--red);color:var(--red);font-size:12px" title="ล้างข้อมูลทดสอบ">🗑 ล้างข้อมูลทดสอบ</button>
+    </div>
+    <div id="sync-status" style="font-size:10px;margin-bottom:2px"></div>
+    <div id="last-updated" style="font-size:10px;color:var(--muted);margin-bottom:4px"></div>
+    <div style="font-size:11px;color:var(--muted);">© 2569 Production Tracker</div>
+  </div>
+</nav>
+
+<!-- Sidebar collapse tab -->
+<button class="sidebar-collapse-tab" onclick="toggleSidebarDesktop()" title="ซ่อน/แสดง Sidebar">
+  <span class="tab-arrow">‹</span>
+</button>
+
+<main class="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div>
+      <h1 id="page-title">Dashboard</h1>
+      <div class="sub" id="page-sub">ภาพรวมงานทั้งหมด</div>
+    </div>
+    <!-- TV clock (visible only in TV mode) -->
+    <div class="tv-clock-bar">
+      <span class="tv-badge">📺 TV MODE</span>
+      <span class="tv-date" id="tv-date"></span>
+      <span class="tv-clock" id="tv-clock"></span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" id="easy-read-btn" onclick="toggleEasyRead()" title="โหมดอ่านง่าย">
+        👁 อ่านง่าย
+      </button>
+      <button class="btn" id="tv-mode-btn" onclick="toggleTvMode()" title="TV / Full Screen Mode" style="padding:7px 10px">
+        <span id="tv-icon">⛶</span>
+        <span id="tv-label">TV Mode</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content" id="main-content">
+    <!-- Content rendered by JS -->
+  </div>
+</main>
+
+<!-- CLEAR DEMO MODAL -->
+<div class="modal-overlay" id="clearDemoModal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <h2>🗑 ล้างข้อมูลทดสอบ</h2>
+    <div class="modal-sub">เลือกว่าต้องการล้างข้อมูลส่วนไหน</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:6px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text)">
+        <input type="checkbox" id="clear-jobs" checked style="width:16px;height:16px;accent-color:var(--red)"> งานทั้งหมด (Jobs)
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:6px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text)">
+        <input type="checkbox" id="clear-history" checked style="width:16px;height:16px;accent-color:var(--red)"> ประวัติงาน (Job Record)
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:6px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text)">
+        <input type="checkbox" id="clear-machines" style="width:16px;height:16px;accent-color:var(--red)"> ข้อมูลเครื่องจักร (Machine Tracking)
+      </label>
+    </div>
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted);margin-bottom:16px">
+      ⚠️ ข้อมูลที่ล้างแล้วจะ<b style="color:var(--text)">ไม่สามารถกู้คืนได้</b>
+    </div>
+    <div class="form-actions" style="justify-content:space-between">
+      <button class="btn" onclick="closeModal('clearDemoModal')">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="confirmClearDemo()">ล้างข้อมูลที่เลือก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="addModal" style="display:none">
+  <div class="modal">
+    <h2 id="modal-title">เพิ่มงานใหม่</h2>
+    <div class="modal-sub" id="modal-sub">กรอกข้อมูลแบบผลิต</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date (วันที่แจกแบบ)</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-group">
+        <label>Project No.</label>
+        <input type="text" id="f-project" placeholder="2002014009">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Customer</label>
+        <input type="text" id="f-customer" placeholder="CITIZEN">
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="f-due">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full">
+        <label>Part Name</label>
+        <input type="text" id="f-partname" placeholder="569-225-1 RING">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Drawing No.</label>
+        <input type="text" id="f-drawing" placeholder="1A-2/7">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="f-qty" placeholder="300">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full">
+        <label>Process</label>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;min-height:44px">
+          <div id="f-proc-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px"></div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="f-proc-input" placeholder="เช่น LA2, MC1 แล้วกด Enter หรือ +" style="flex:1;font-size:12px;padding:5px 8px" onkeydown="if(event.key==='Enter'){event.preventDefault();addAddProc();}">
+            <button class="btn btn-sm btn-primary" onclick="addAddProc()" type="button">+ เพิ่ม</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('addModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveJob()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE MODAL -->
+<div class="modal-overlay" id="completeModal" style="display:none">
+  <div class="modal">
+    <h2>จบงาน</h2>
+    <div class="modal-sub" id="complete-sub">กรอกผลผลิต</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>งานดี (FG)</label>
+        <input type="number" id="c-fg" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>งานเสีย (NG)</label>
+        <input type="number" id="c-ng" placeholder="0">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('completeModal')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="confirmComplete()">✓ จบงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEPT/PROCESS EDIT MODAL -->
+<div class="modal-overlay" id="editModal" style="display:none">
+  <div class="modal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <div>
+        <h2 id="edit-title">อัปเดตสถานะ</h2>
+        <div class="modal-sub" id="edit-sub" style="margin-bottom:0"></div>
+      </div>
+      <button class="btn btn-sm" onclick="toggleJobInfoEdit()" id="btn-edit-info" title="แก้ไขข้อมูลงาน" style="flex-shrink:0;margin-left:10px">✏️ แก้ไขข้อมูล</button>
+    </div>
+
+    <!-- Job info edit panel (hidden by default) -->
+    <div id="job-info-editor" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;margin-top:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px">แก้ไขข้อมูลแบบผลิต</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date (วันที่แจกแบบ)</label>
+          <input type="date" id="ei-date">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="ei-due">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Project No.</label>
+          <input type="text" id="ei-project" placeholder="2002014009">
+        </div>
+        <div class="form-group">
+          <label>Customer</label>
+          <input type="text" id="ei-customer" placeholder="CITIZEN">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full">
+          <label>Part Name</label>
+          <input type="text" id="ei-partname" placeholder="569-225-1 RING">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Drawing No.</label>
+          <input type="text" id="ei-drawing" placeholder="1A-2/7">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="ei-qty" placeholder="300">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+    <div class="form-group" style="margin-bottom:14px">
+      <label>แผนกปัจจุบัน</label>
+      <div class="dept-select-wrap" id="dept-select-wrap"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="margin-bottom:0">Process ปัจจุบัน</label>
+        <button class="btn btn-sm" onclick="toggleEditProcesses()" id="btn-toggle-proc" style="font-size:11px;padding:3px 8px">✏️ แก้ไข Process</button>
+      </div>
+      <div class="process-list" id="process-select-list"></div>
+    </div>
+
+    <!-- Process editor (hidden by default) -->
+    <div id="proc-editor" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">แก้ไขรายการ Process</div>
+      <div id="proc-edit-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="new-proc-input" placeholder="เพิ่ม Process ใหม่ เช่น LA2" style="flex:1;font-size:12px;padding:6px 8px" onkeydown="if(event.key==='Enter'){event.preventDefault();addProcItem();}">
+        <button class="btn btn-sm btn-primary" onclick="addProcItem()">+ เพิ่ม</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Machine No.</label>
+        <input type="text" id="e-machine" placeholder="CL-01">
+      </div>
+      <div class="form-group">
+        <label>สถานะงาน</label>
+        <select id="e-status">
+          <option value="active">In Process</option>
+          <option value="stop">On Hold</option>
+        </select>
+      </div>
+    </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('editModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MACHINE STATUS MODAL -->
+<div class="modal-overlay" id="mcStatusModal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <h2 id="mc-modal-title">เปลี่ยนสถานะเครื่อง</h2>
+    <div class="modal-sub" id="mc-modal-sub"></div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>สถานะ</label>
+      <div style="display:flex;flex-direction:column;gap:8px" id="mc-status-btns">
+        <button class="btn" onclick="setMcStatus('running')" style="justify-content:flex-start;gap:10px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green)"></span> ทำงานอยู่
+        </button>
+        <button class="btn" onclick="setMcStatus('idle')" style="justify-content:flex-start;gap:10px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block"></span> ว่าง (ไม่มีงาน)
+        </button>
+        <button class="btn" onclick="setMcStatus('repair')" style="justify-content:flex-start;gap:10px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--red);display:inline-block;box-shadow:0 0 6px var(--red)"></span> ซ่อม / Maintenance
+        </button>
+        <button class="btn" id="mc-off-btn" onclick="setMcStatus('off')" style="justify-content:flex-start;gap:10px">
+          <span style="width:9px;height:9px;border-radius:50%;background:#374151;display:inline-block"></span> ปิดเครื่อง / Off
+        </button>
+      </div>
+    </div>
+    <div id="mc-off-note" style="display:none;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--muted);margin-bottom:12px">
+      💡 งานที่ค้างอยู่จะ<b style="color:var(--text)">ไม่หายไป</b> — ยังมองเห็นใน Dashboard และสามารถ assign กลับมาได้เมื่อเปิดเครื่องใหม่
+    </div>
+    <div class="form-actions" style="margin-top:0">
+      <button class="btn" onclick="closeModal('mcStatusModal')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MACHINE MODAL -->
+<div class="modal-overlay" id="addMachineModal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <h2>เพิ่มเครื่องจักร</h2>
+    <div class="modal-sub" id="add-machine-area-name"></div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Machine No.</label>
+      <input type="text" id="new-mc-no" placeholder="เช่น MC-01, WC-03">
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('addMachineModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="confirmAddMachine()">เพิ่ม</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD AREA MODAL -->
+<div class="modal-overlay" id="addAreaModal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <h2>เพิ่มพื้นที่ใหม่</h2>
+    <div class="modal-sub">กำหนดชื่อพื้นที่</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>ชื่อพื้นที่</label>
+      <input type="text" id="new-area-name" placeholder="เช่น Lathe Area">
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('addAreaModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="confirmAddArea()">เพิ่มพื้นที่</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT AREA MODAL -->
+<div class="modal-overlay" id="editAreaModal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <h2>แก้ไขพื้นที่</h2>
+    <div class="modal-sub" id="edit-area-sub"></div>
+    <div id="edit-area-main">
+      <div class="form-group" style="margin-bottom:16px">
+        <label>ชื่อพื้นที่</label>
+        <input type="text" id="edit-area-name" placeholder="เช่น MC Section">
+      </div>
+      <div class="form-actions" style="justify-content:space-between">
+        <button class="btn btn-danger" onclick="showAreaDeleteConfirm()">🗑 ลบพื้นที่</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="openAddMachineFromArea()">＋ เพิ่มเครื่อง</button>
+          <button class="btn" onclick="closeModal('editAreaModal')">ยกเลิก</button>
+          <button class="btn btn-primary" onclick="confirmEditArea()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+    <div id="edit-area-confirm" style="display:none">
+      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:600;color:var(--red);margin-bottom:4px">⚠️ ยืนยันการลบ</div>
+        <div id="edit-area-confirm-msg" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="hideAreaDeleteConfirm()">ยกเลิก</button>
+        <button class="btn btn-danger" onclick="doDeleteArea()">ลบเลย</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MACHINE MODAL -->
+<div class="modal-overlay" id="editMachineModal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <h2>แก้ไขเครื่องจักร</h2>
+    <div class="modal-sub" id="edit-machine-sub"></div>
+    <div id="edit-machine-main">
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Machine No.</label>
+        <input type="text" id="edit-machine-no" placeholder="เช่น MC-01">
+      </div>
+      <div class="form-actions" style="justify-content:space-between">
+        <button class="btn btn-danger" onclick="showMachineDeleteConfirm()">🗑 ลบเครื่อง</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="closeModal('editMachineModal')">ยกเลิก</button>
+          <button class="btn btn-primary" onclick="confirmEditMachine()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+    <div id="edit-machine-confirm" style="display:none">
+      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:600;color:var(--red);margin-bottom:4px">⚠️ ยืนยันการลบ</div>
+        <div id="edit-machine-confirm-msg" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="hideMachineDeleteConfirm()">ยกเลิก</button>
+        <button class="btn btn-danger" onclick="doDeleteMachine()">ลบเลย</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COLUMN TOGGLE PANEL -->
+<div id="col-panel" style="display:none;position:fixed;bottom:80px;left:12px;z-index:400;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.5);overflow:hidden">
+  <div style="padding:12px 14px 8px;border-bottom:1px solid var(--border)">
+    <div style="font-size:12px;font-weight:600;color:var(--text)">แสดงคอลัมน์</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:1px">เลือกคอลัมน์ที่ต้องการ</div>
+  </div>
+  <div style="padding:8px 6px" id="col-checkboxes"></div>
+  <div style="padding:8px 14px 10px;border-top:1px solid var(--border);display:flex;gap:6px">
+    <button class="btn btn-sm" onclick="resetCols()" style="flex:1;justify-content:center;font-size:11px">Reset</button>
+    <button class="btn btn-sm btn-primary" onclick="document.getElementById('col-panel').style.display='none'" style="flex:1;justify-content:center;font-size:11px">Done</button>
+  </div>
+</div>
+
+<script>
+// ========== DATA ==========
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycby4wXWCPz_OPcfqqbAO3zwnGyS6wfxYUAvw1MfbZHVGptDlldp-Db-Hfm0LMFCf55oY/exec';
+
+// ========== SHEET SYNC ==========
+let isSyncing = false;
+
+async function syncFromSheet() {
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncStatus('loading');
+  try {
+    const res = await fetch(SHEET_URL + '?action=getAll');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // แปลง processes จาก Process1-11 กลับเป็น array
+    jobs = (data.jobs || []).map(parseJobFromSheet);
+    history = (data.history || []).map(parseJobFromSheet);
+    if (data.machines && data.machines.length > 0) machineAreas = data.machines;
+
+    localStorage.setItem('jobs', JSON.stringify(jobs));
+    localStorage.setItem('history', JSON.stringify(history));
+    localStorage.setItem('machineAreas', JSON.stringify(machineAreas));
+
+    updateLastUpdated();
+    updateSyncStatus('ok');
+    renderPage();
+  } catch(e) {
+    console.error('Sync error:', e);
+    updateSyncStatus('error');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function syncToSheet(action, payload) {
+  try {
+    const res = await fetch(SHEET_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...payload })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    updateLastUpdated();
+    return data;
+  } catch(e) {
+    console.error('Sync error:', e);
+    updateSyncStatus('error');
+    return null;
+  }
+}
+
+function parseJobFromSheet(j) {
+  // รวม Process1-11 เป็น array
+  const processes = [];
+  for (let i = 1; i <= 11; i++) {
+    const p = j['Process' + i];
+    if (p && p.trim()) processes.push(p.trim());
+  }
+  return {
+    id: j.id || genId(),
+    date: j.date || '',
+    projectNo: j.projectNo || '',
+    customer: j.customer || '',
+    partName: j.partName || '',
+    drawing: j.drawing || '',
+    qty: j.qty || '',
+    due: j.due || '',
+    processes,
+    dept: j.dept || 'N/A',
+    currentProc: j.currentProc !== '' && j.currentProc !== undefined ? Number(j.currentProc) : null,
+    status: j.status || 'active',
+    machine: j.machine || '',
+    fg: j.fg !== '' ? j.fg : null,
+    ng: j.ng !== '' ? j.ng : null,
+    completedAt: j.completedAt || ''
+  };
+}
+
+function jobToSheet(j) {
+  const obj = { ...j };
+  // แปลง processes array เป็น Process1-11
+  (j.processes || []).forEach((p, i) => { obj['Process' + (i+1)] = p; });
+  for (let i = (j.processes || []).length + 1; i <= 11; i++) { obj['Process' + i] = ''; }
+  delete obj.processes;
+  return obj;
+}
+
+function updateSyncStatus(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (state === 'loading') { el.textContent = '⟳ กำลัง sync...'; el.style.color = 'var(--accent2)'; }
+  else if (state === 'ok')  { el.textContent = '✓ Synced'; el.style.color = 'var(--green)'; }
+  else if (state === 'error'){ el.textContent = '✕ Sync ล้มเหลว'; el.style.color = 'var(--red)'; }
+}
+let jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+let history = JSON.parse(localStorage.getItem('history') || '[]');
+let machineAreas = JSON.parse(localStorage.getItem('machineAreas') || 'null');
+let currentPage = 'dashboard';
+let editingId = null;
+let completeId = null;
+let editDept = null;
+let editProcIdx = null;
+let _mcEditAreaIdx = null;
+let _mcEditMcIdx = null;
+let _mcAddAreaIdx = null;
+
+const DEPTS = ['MFG-1.1.', 'MFG-1.2.', 'QC', 'Other', 'N/A'];
+const DEPT_KEYS = { 'MFG-1.1.': 'MFG11', 'MFG-1.2.': 'MFG12', 'QC': 'QC', 'Other': 'Other', 'N/A': 'NA' };
+const DEPT_LABELS = { 'MFG11': 'MC', 'MFG12': 'CL&ML', 'QC': 'QC', 'Other': 'Other', 'NA': 'N/A' };
+
+function save() {
+  localStorage.setItem('jobs', JSON.stringify(jobs));
+  localStorage.setItem('history', JSON.stringify(history));
+  localStorage.setItem('machineAreas', JSON.stringify(machineAreas));
+}
+
+function genId() { return Date.now() + Math.random().toString(36).slice(2); }
+
+function daysLeft(dueDate) {
+  if (!dueDate) return null;
+  const due = new Date(dueDate);
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  due.setHours(0,0,0,0);
+  return Math.round((due - now) / 86400000);
+}
+
+function dueBadge(d) {
+  const days = daysLeft(d);
+  if (days === null) return '<span class="muted">—</span>';
+  if (days < 0) return `<span class="due-chip" style="background:rgba(239,68,68,0.15);color:#f87171">เกิน ${Math.abs(days)}วัน</span>`;
+  if (days === 0) return `<span class="due-chip" style="background:rgba(239,68,68,0.15);color:#f87171">วันนี้!</span>`;
+  if (days <= 7) return `<span class="due-chip" style="background:rgba(234,179,8,0.15);color:#fbbf24">เหลือ ${days}วัน</span>`;
+  return `<span class="due-chip" style="background:rgba(34,197,94,0.1);color:#4ade80">เหลือ ${days}วัน</span>`;
+}
+
+function deptKey(dept) {
+  return DEPT_KEYS[dept] || 'NA';
+}
+
+function deptBadge(dept) {
+  const k = deptKey(dept);
+  return `<span class="dept-badge dept-${k}">${DEPT_LABELS[k] || dept}</span>`;
+}
+
+function statusBadge(status, jobId) {
+  const tip = status === 'active' ? 'In Process — คลิกเพื่อ On Hold' : 'On Hold — คลิกเพื่อ In Process';
+  const onclick = jobId ? `onclick="quickToggleStatus('${jobId}')"` : '';
+  if (status === 'active') return `<span class="status-icon active" data-tip="${tip}" ${onclick}><span class="status-dot-inner active-dot"></span></span>`;
+  if (status === 'stop')   return `<span class="status-icon stop"   data-tip="${tip}" ${onclick}><span class="status-dot-inner stop-dot"></span></span>`;
+  return `<span class="status-icon" data-tip="Done"><span class="status-dot-inner done-dot"></span></span>`;
+}
+
+// ========== NAVIGATE ==========
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('nav-' + page);
+  if (el) el.classList.add('active');
+  const titles = {
+    'dashboard': ['Dashboard', 'ภาพรวมงานทั้งหมด'],
+    'MFG11': ['MC', 'งานในแผนก MC'],
+    'MFG12': ['CL&ML', 'งานในแผนก CL&ML'],
+    'QC': ['QC', 'งานในแผนก QC'],
+    'Other': ['Other', 'งานในแผนก Other'],
+    'NA': ['N/A', 'งานที่ยังไม่ได้รับมอบหมายแผนก'],
+    'machines': ['Machine Tracking', 'ติดตามสถานะเครื่องจักร'],
+    'history': ['Job Record', 'งานที่เสร็จสิ้นแล้ว'],
+  };
+  const t = titles[page] || [page, ''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent = t[1];
+  renderPage();
+  closeSidebar();
+}
+
+function updateBadges() {
+  const active = jobs.filter(j => j.status !== 'done');
+  document.getElementById('badge-dashboard').textContent = active.length;
+  ['MFG11','MFG12','QC','Other','NA'].forEach(k => {
+    const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === k);
+    const el = document.getElementById('badge-' + k);
+    if (el) el.textContent = active.filter(j => j.dept === deptName).length;
+  });
+  document.getElementById('badge-history').textContent = history.length;
+}
+
+// ========== RENDER ==========
+function renderPage() {
+  updateBadges();
+  const el = document.getElementById('main-content');
+  const addBtn = document.getElementById('topbar-add-btn');
+  const colBtn = document.getElementById('col-toggle-btn');
+  const isMachinesPage = currentPage === 'machines';
+  if (addBtn) addBtn.style.display = isMachinesPage || tvMode ? 'none' : '';
+  if (colBtn) colBtn.style.display = isMachinesPage || tvMode ? 'none' : '';
+  if (currentPage === 'dashboard') renderDashboard(el);
+  else if (currentPage === 'history') renderHistory(el);
+  else if (currentPage === 'machines') renderMachines(el);
+  else renderDept(el, currentPage);
+  applyColVisibility();
+  updateClearDemoBtn();
+}
+
+let dashSort = localStorage.getItem('dashSort') || 'due'; // 'due' | 'added'
+
+function renderDashboard(el) {
+  const active = jobs.filter(j => j.status !== 'done');
+  const running = active.filter(j => j.status === 'active').length;
+  const stopped = active.filter(j => j.status === 'stop').length;
+  const overdue = active.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0).length;
+  const warn = active.filter(j => { const d = daysLeft(j.due); return d !== null && d >= 0 && d <= 7; }).length;
+
+  // Sort
+  let sorted = [...active];
+  if (dashSort === 'due') {
+    sorted.sort((a, b) => {
+      const da = a.due ? new Date(a.due) : new Date('9999-12-31');
+      const db = b.due ? new Date(b.due) : new Date('9999-12-31');
+      return da - db;
+    });
+  }
+
+  el.innerHTML = `
+    <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat-card">
+        <div class="label">Active</div>
+        <div class="value" style="color:var(--accent)">${active.length}</div>
+        <div class="sub">งาน</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">In Process</div>
+        <div class="value" style="color:var(--green)">${running}</div>
+        <div class="sub">งาน</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">On Hold</div>
+        <div class="value" style="color:var(--yellow)">${stopped}</div>
+        <div class="sub">งาน</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">เกิน Due Date</div>
+        <div class="value" style="color:var(--red)">${overdue}</div>
+        <div class="sub">งาน</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">เหลือ ≤ 7 วัน</div>
+        <div class="value" style="color:var(--yellow)">${warn}</div>
+        <div class="sub">งาน</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
+      <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
+      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date</button>
+    </div>
+    ${renderTable(sorted, true)}
+  `;
+}
+
+function setDashSort(mode) {
+  dashSort = mode;
+  localStorage.setItem('dashSort', mode);
+  renderPage();
+}
+
+function renderDept(el, deptKey) {
+  const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === deptKey);
+  const deptJobs = jobs.filter(j => j.status !== 'done' && j.dept === deptName);
+  const orderKey = 'order_' + deptKey;
+  let order = JSON.parse(localStorage.getItem(orderKey) || 'null');
+  let sorted = deptJobs;
+  if (order) {
+    const orderMap = {};
+    order.forEach((id, i) => orderMap[id] = i);
+    sorted = [...deptJobs].sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
+  }
+  el.innerHTML = sorted.length === 0
+    ? `<div style="color:var(--muted);padding:32px;text-align:center;font-size:14px;">ไม่มีงานในแผนกนี้ขณะนี้</div>`
+    : renderTable(sorted, false, true, orderKey);
+  if (sorted.length > 0 && !isMobile()) initDrag(deptKey);
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+function isMobile() { return window.innerWidth <= 768; }
+
+function renderCards(list, draggable = false, orderKey = null) {
+  if (list.length === 0) {
+    return `<div style="padding:32px;text-align:center;color:var(--muted)">ยังไม่มีงาน — กด <b>+ เพิ่มงาน</b> เพื่อเริ่มต้น</div>`;
+  }
+  return `<div class="job-cards">` + list.map((j, idx) => {
+    const days = daysLeft(j.due);
+    let daysChip = '';
+    if (days !== null) {
+      if (days < 0) daysChip = `<span class="due-chip due-over">+${Math.abs(days)}d</span>`;
+      else if (days === 0) daysChip = `<span class="due-chip due-over">Today!</span>`;
+      else if (days <= 7) daysChip = `<span class="due-chip due-warn">${days}d left</span>`;
+      else daysChip = `<span class="due-chip due-ok">${days}d left</span>`;
+    }
+    const procs = j.processes || [];
+    const cur = j.currentProc;
+    const chips = procs.map((p, i) =>
+      `<span class="proc-chip ${cur === i ? 'active' : ''}" onclick="quickProcClick('${j.id}',${i})">${p}</span>`
+    ).join('');
+    const overdue = days !== null && days < 0;
+    const cardClass = j.status === 'stop' ? 'jc-hold' : overdue ? 'jc-over' : 'jc-active';
+    const orderBtns = orderKey ? `
+      <div class="order-btns">
+        <button class="order-btn" ${idx === 0 ? 'disabled' : ''} onclick="moveCardOrder('${orderKey}','${j.id}',-1)" title="เลื่อนขึ้น">▲</button>
+        <button class="order-btn" ${idx === list.length-1 ? 'disabled' : ''} onclick="moveCardOrder('${orderKey}','${j.id}',1)" title="เลื่อนลง">▼</button>
+      </div>` : '';
+
+    return `<div class="job-card ${cardClass}" data-id="${j.id}">
+      <div class="jc-top">
+        ${orderBtns}
+        <div class="jc-status">${statusBadge(j.status || 'active', j.id)}</div>
+        <div class="jc-main">
+          <div class="jc-name">${j.partName || '—'}</div>
+          <div class="jc-meta">${j.projectNo || ''} (${j.drawing || '—'}) · ${j.customer || ''}</div>
+        </div>
+        <div class="jc-right">
+          <div class="dept-dropdown-wrap">
+            <div onclick="toggleDeptDD('${j.id}',event)">${deptBadge(j.dept || 'N/A')}</div>
+            <div class="dept-dropdown" id="deptdd-${j.id}">
+              ${DEPTS.map(d => {
+                const k = deptKey(d);
+                return `<div class="dept-dd-item dept-${k}" onclick="quickSetDept('${j.id}','${d}',event)">${DEPT_LABELS[k]||d}</div>`;
+              }).join('')}
+            </div>
+          </div>
+          <span class="jc-qty-badge">×${j.qty || '—'}</span>
+        </div>
+      </div>
+
+      <div class="jc-row">
+        <span class="jc-label">Due</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px">${formatDate(j.due)}</span>
+        ${daysChip}
+      </div>
+
+      ${procs.length > 0 ? `<div class="jc-row">
+        <span class="jc-label">Process</span>
+        <div class="jc-proc">${chips}</div>
+      </div>` : ''}
+
+      <div class="jc-row">
+        <span class="jc-label">MC</span>
+        <div class="mc-dd-wrap">
+          <div class="${j.machine ? 'mc-dd-trigger' : 'mc-dd-trigger no-mc'}" onclick="toggleMcDD('${j.id}',event)">
+            ${j.machine || '+ MC'}
+          </div>
+          <div class="mc-dropdown" id="mcdd-${j.id}"></div>
+        </div>
+      </div>
+
+      <div class="jc-actions">
+        <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎ อัปเดต</button>
+        <button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
+  if (isMobile()) return renderCards(list, draggable, orderKey);
+  if (list.length === 0) {
+    return `<div class="table-wrap"><div style="padding:32px;text-align:center;color:var(--muted)">ยังไม่มีงาน — กด <b>+ เพิ่มงาน</b> เพื่อเริ่มต้น</div></div>`;
+  }
+  const rows = list.map((j, idx) => {
+    const procs = (j.processes || []);
+    const cur = j.currentProc;
+    const procNavHtml = buildProcNav(j.id, procs, cur);
+    const days = daysLeft(j.due);
+    let daysHtml = '';
+    if (days !== null) {
+      if (days < 0) daysHtml = `<div style="margin-bottom:3px"><span class="due-chip due-over">+${Math.abs(days)}d</span></div>`;
+      else if (days === 0) daysHtml = `<div style="margin-bottom:3px"><span class="due-chip due-over">Today!</span></div>`;
+      else if (days <= 7) daysHtml = `<div style="margin-bottom:3px"><span class="due-chip due-warn">${days}d left</span></div>`;
+      else daysHtml = `<div style="margin-bottom:3px"><span class="due-chip due-ok">${days}d left</span></div>`;
+    }
+    const orderBtnsHtml = orderKey ? `<td style="text-align:center;padding:4px 6px">
+      <div class="order-btns">
+        <button class="order-btn" ${idx === 0 ? 'disabled' : ''} onclick="moveCardOrder('${orderKey}','${j.id}',-1)" title="เลื่อนขึ้น">▲</button>
+        <button class="order-btn" ${idx === list.length-1 ? 'disabled' : ''} onclick="moveCardOrder('${orderKey}','${j.id}',1)" title="เลื่อนลง">▼</button>
+      </div>
+    </td>` : '';
+
+    return `<tr data-id="${j.id}">
+      ${draggable ? `<td class="drag-handle tv-hide" title="ลากเพื่อเรียงลำดับ">⠿</td>` : ''}
+      ${orderBtnsHtml}
+      <td class="col-date cv-date">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap">${formatDate(j.date)}</div>
+      </td>
+      <td class="col-job cv-job">
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.partName || '—'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.projectNo || ''} (${j.drawing || '—'}) · ${j.customer || ''}</div>
+      </td>
+      <td class="col-qty cv-qty" style="font-family:'IBM Plex Mono',monospace;text-align:center;font-size:12px">${j.qty || '—'}</td>
+      <td class="col-due cv-due" style="white-space:nowrap">
+        ${daysHtml}
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px">${formatDate(j.due)}</div>
+      </td>
+      <td class="col-dept cv-dept">
+        <div class="dept-dropdown-wrap">
+          <div onclick="toggleDeptDD('${j.id}',event)">${deptBadge(j.dept || 'N/A')}</div>
+          <div class="dept-dropdown" id="deptdd-${j.id}">
+            ${DEPTS.map(d => {
+              const k = deptKey(d);
+              return `<div class="dept-dd-item dept-${k}" onclick="quickSetDept('${j.id}','${d}',event)">${DEPT_LABELS[k]||d}</div>`;
+            }).join('')}
+          </div>
+        </div>
+      </td>
+      <td class="col-proc cv-proc">
+        <div class="proc-nav">${procNavHtml}</div>
+      </td>
+      <td class="col-status cv-status" style="text-align:center">
+        ${statusBadge(j.status || 'active', j.id)}
+      </td>
+      <td class="col-mc cv-mc" style="text-align:center">
+        <div class="mc-dd-wrap">
+          <div class="${j.machine ? 'mc-dd-trigger' : 'mc-dd-trigger no-mc'}" onclick="toggleMcDD('${j.id}',event)">
+            ${j.machine || '+ MC'}
+          </div>
+          <div class="mc-dropdown" id="mcdd-${j.id}"></div>
+        </div>
+      </td>
+      <td class="tv-hide cv-action">
+        <div style="display:flex;gap:5px;flex-wrap:nowrap">
+          <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎</button>
+          <button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-wrap">
+    <div style="overflow-x:auto">
+    <table style="table-layout:fixed;width:100%">
+      <colgroup>
+        ${draggable ? '<col class="tv-hide" style="width:36px">' : ''}
+        ${orderKey ? '<col style="width:46px">' : ''}
+        <col class="cv-date" style="width:88px">
+        <col class="cv-job" style="width:180px">
+        <col class="cv-qty" style="width:52px">
+        <col class="cv-due" style="width:86px">
+        <col class="cv-dept" style="width:84px">
+        <col class="cv-proc">
+        <col class="cv-status" style="width:44px">
+        <col class="cv-mc" style="width:72px">
+        <col class="tv-hide cv-action" style="width:96px">
+      </colgroup>
+      <thead>
+        <tr>
+          ${draggable ? '<th class="tv-hide">—</th>' : ''}
+          ${orderKey ? '<th style="text-align:center">ลำดับ</th>' : ''}
+          <th class="cv-date">Date</th>
+          <th class="cv-job">Job</th>
+          <th class="cv-qty" style="text-align:center">Qty</th>
+          <th class="cv-due">Due</th>
+          <th class="cv-dept">Dept</th>
+          <th class="cv-proc">Process</th>
+          <th class="cv-status" style="text-align:center" title="Status">St.</th>
+          <th class="cv-mc" style="text-align:center">MC</th>
+          <th class="tv-hide cv-action">Action</th>
+        </tr>
+      </thead>
+      <tbody id="job-tbody">${rows}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
+// ========== MACHINE TRACKING ==========
+function initMachineAreas() {
+  if (machineAreas) return;
+  machineAreas = [
+    {
+      id: 'area-cl', name: 'CL&Milling Section',
+      machines: [
+        { id: genId(), no: 'CL-01', status: 'idle' },
+        { id: genId(), no: 'CL-02', status: 'idle' },
+        { id: genId(), no: 'CL-03', status: 'idle' },
+        { id: genId(), no: 'CL-09', status: 'idle' },
+        { id: genId(), no: 'CL-10', status: 'idle' },
+        { id: genId(), no: 'LA-04', status: 'idle' },
+        { id: genId(), no: 'MC-12', status: 'idle' },
+        { id: genId(), no: 'MC-14', status: 'idle' },
+        { id: genId(), no: 'NC-01', status: 'idle' },
+        { id: genId(), no: 'NC-02', status: 'idle' },
+        { id: genId(), no: 'NC-03', status: 'idle' },
+        { id: genId(), no: 'NC-04', status: 'idle' },
+        { id: genId(), no: 'NC-05', status: 'idle' },
+        { id: genId(), no: 'NC-06', status: 'idle' },
+        { id: genId(), no: 'NC-07', status: 'idle' },
+        { id: genId(), no: 'NC-08', status: 'idle' },
+      ]
+    },
+    {
+      id: 'area-gr', name: 'Grinding Section',
+      machines: [
+        { id: genId(), no: 'GR-01', status: 'idle' },
+        { id: genId(), no: 'GR-02', status: 'idle' },
+        { id: genId(), no: 'GR-03', status: 'idle' },
+        { id: genId(), no: 'GR-04', status: 'idle' },
+        { id: genId(), no: 'GR-05', status: 'idle' },
+        { id: genId(), no: 'GR-06', status: 'idle' },
+        { id: genId(), no: 'GR-07', status: 'idle' },
+        { id: genId(), no: 'GR-08', status: 'idle' },
+        { id: genId(), no: 'GR-09', status: 'idle' },
+      ]
+    },
+    {
+      id: 'area-mc', name: 'Machining Section',
+      machines: [
+        { id: genId(), no: 'MC-01', status: 'idle' },
+        { id: genId(), no: 'MC-02', status: 'idle' },
+        { id: genId(), no: 'MC-03', status: 'idle' },
+        { id: genId(), no: 'MC-05', status: 'idle' },
+        { id: genId(), no: 'MC-09', status: 'idle' },
+        { id: genId(), no: 'MC-11', status: 'idle' },
+        { id: genId(), no: 'MC-15', status: 'idle' },
+        { id: genId(), no: 'MC-16', status: 'idle' },
+        { id: genId(), no: 'MC-17', status: 'idle' },
+        { id: genId(), no: 'MC-18', status: 'idle' },
+      ]
+    },
+    {
+      id: 'area-wc', name: 'Wire Cut Section',
+      machines: [
+        { id: genId(), no: 'WC-02', status: 'idle' },
+      ]
+    },
+  ];
+  save();
+}
+
+function getMachineJob(machineNo) {
+  if (!machineNo) return null;
+  return jobs.find(j => j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done') || null;
+}
+
+function getQueueForMachine(machineNo) {
+  if (!machineNo) return [];
+  const key = 'mcqueue_' + machineNo.trim().toUpperCase();
+  const order = JSON.parse(localStorage.getItem(key) || '[]');
+  const matched = jobs.filter(j =>
+    j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done'
+  );
+  if (order.length === 0) return matched;
+  const orderMap = {};
+  order.forEach((id, i) => orderMap[id] = i);
+  return [...matched].sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
+}
+
+function saveMcQueue(machineNo, ids) {
+  const key = 'mcqueue_' + machineNo.trim().toUpperCase();
+  localStorage.setItem(key, JSON.stringify(ids));
+}
+
+function getAllMachineNos() {
+  if (!machineAreas) return [];
+  const nos = [];
+  machineAreas.forEach(area => area.machines.forEach(m => nos.push({ no: m.no, status: m.status, areaName: area.name })));
+  return nos;
+}
+
+function mcStatusLabel(s) {
+  return { running: 'ทำงานอยู่', idle: 'ว่าง', repair: 'ซ่อม / Maintenance', off: 'ปิดเครื่อง' }[s] || s;
+}
+
+function renderMachines(el) {
+  initMachineAreas();
+  const totalMachines = machineAreas.reduce((s, a) => s + a.machines.length, 0);
+  const running = machineAreas.reduce((s, a) => s + a.machines.filter(m => m.status === 'running').length, 0);
+  const idle = machineAreas.reduce((s, a) => s + a.machines.filter(m => m.status === 'idle').length, 0);
+  const repair = machineAreas.reduce((s, a) => s + a.machines.filter(m => m.status === 'repair').length, 0);
+  const off = machineAreas.reduce((s, a) => s + a.machines.filter(m => m.status === 'off').length, 0);
+
+  const summaryHtml = `
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="stat-card">
+        <div class="label">ทำงานอยู่</div>
+        <div class="value" style="color:var(--green)">${running}</div>
+        <div class="sub">/ ${totalMachines} เครื่อง</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ว่าง</div>
+        <div class="value" style="color:var(--muted)">${idle}</div>
+        <div class="sub">เครื่อง</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ซ่อม / Maintenance</div>
+        <div class="value" style="color:var(--red)">${repair}</div>
+        <div class="sub">เครื่อง</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ปิดเครื่อง / Off</div>
+        <div class="value" style="color:#4b5563">${off}</div>
+        <div class="sub">เครื่อง</div>
+      </div>
+    </div>`;
+
+  const areasHtml = machineAreas.map((area, aIdx) => {
+    const aRun = area.machines.filter(m => m.status === 'running').length;
+    const aRep = area.machines.filter(m => m.status === 'repair').length;
+    const aIdle = area.machines.filter(m => m.status === 'idle').length;
+
+    const machineCards = area.machines.map((m, mIdx) => {
+      const queue = getQueueForMachine(m.no);
+      const hasJobs = queue.length > 0;
+      // If machine is off but has jobs queued, show as off (not auto-running)
+      const effectiveStatus = (hasJobs && m.status !== 'off') ? 'running' : m.status;
+
+      let queueHtml = '';
+      if (hasJobs) {
+        queueHtml = `<div class="mc-queue" id="mcq-${m.no.replace(/[^a-zA-Z0-9]/g,'')}">` +
+          queue.map((j, qi) => {
+            const procName = (j.currentProc !== null && j.currentProc !== undefined && j.processes?.[j.currentProc])
+              ? j.processes[j.currentProc] : '';
+            const isActive = qi === 0;
+            return `<div class="mc-queue-item ${isActive ? 'q-active' : 'q-waiting'}"
+              draggable="true"
+              data-jid="${j.id}"
+              data-mcno="${m.no}"
+              ondragstart="mcqDragStart(event)"
+              ondragover="mcqDragOver(event)"
+              ondrop="mcqDrop(event)"
+              ondragend="mcqDragEnd(event)">
+              <span class="q-rank">${isActive ? '▶' : qi}</span>
+              <span class="q-name" title="${j.partName}">${j.partName}</span>
+              ${procName ? `<span class="q-proc">${procName}</span>` : ''}
+            </div>`;
+          }).join('') +
+        `</div>`;
+      }
+
+      return `<div class="mc-card mc-${effectiveStatus} ${hasJobs ? 'mc-card-expanded' : ''}" onclick="openMcStatusModal(${aIdx},${mIdx})">
+        <div class="mc-top">
+          <div class="mc-no">${m.no}</div>
+          <div class="mc-status-dot ${effectiveStatus}"></div>
+        </div>
+        <div class="mc-status-label ${effectiveStatus}">${mcStatusLabel(effectiveStatus)}${hasJobs ? ` · ${queue.length}` : ''}${m.status === 'off' && hasJobs ? ' ⚠️' : ''}</div>
+        ${hasJobs ? queueHtml : `<div style="font-size:11px;color:var(--border)">—</div>`}
+        <div class="mc-assign-wrap" onclick="event.stopPropagation()">
+          <button class="mc-assign-btn" onclick="toggleAssignDD('${m.no}',event)">＋ เพิ่มงานเข้าคิว</button>
+          <div class="mc-assign-dd" id="assigndd-${m.no.replace(/[^a-zA-Z0-9]/g,'')}"></div>
+        </div>
+        <div class="mc-actions">
+          <button class="mc-btn" onclick="event.stopPropagation();openEditMachineModal(${aIdx},${mIdx})" title="แก้ไข / ลบเครื่อง">✎</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="mt-area">
+      <div class="mt-area-header">
+        <h3>${area.name}</h3>
+        <div class="area-stats">
+          ${aRun > 0 ? `<span class="mc-stat-chip mc-stat-run">▶ ${aRun}</span>` : ''}
+          ${aRep > 0 ? `<span class="mc-stat-chip mc-stat-rep">🔧 ${aRep}</span>` : ''}
+          <span class="mc-stat-chip mc-stat-idle">${area.machines.length} เครื่อง</span>
+        </div>
+        <button class="btn btn-sm" style="margin-left:4px" onclick="openEditAreaModal(${aIdx})" title="แก้ไข / ลบพื้นที่">✎</button>
+      </div>
+      <div class="mt-machines">
+        ${machineCards}
+      </div>
+    </div>`;
+  }).join('');
+
+  const addAreaBtn = `<button class="btn" style="margin-top:4px;width:100%;justify-content:center" onclick="openAddAreaModal()">＋ เพิ่มพื้นที่ใหม่</button>`;
+
+  el.innerHTML = summaryHtml + `<div class="mt-areas">${areasHtml}</div>` + `<div style="padding:8px 0">${addAreaBtn}</div>`;
+}
+
+function openMcStatusModal(aIdx, mIdx) {
+  _mcEditAreaIdx = aIdx;
+  _mcEditMcIdx = mIdx;
+  const m = machineAreas[aIdx].machines[mIdx];
+  const queue = getQueueForMachine(m.no);
+  const hasJobs = queue.length > 0;
+  document.getElementById('mc-modal-title').textContent = m.no;
+  document.getElementById('mc-modal-sub').textContent = hasJobs
+    ? `มีงานค้างอยู่ ${queue.length} งาน`
+    : 'ไม่มีงานในขณะนี้';
+  // Show off-note only when there are jobs
+  document.getElementById('mc-off-note').style.display = hasJobs ? 'block' : 'none';
+  document.getElementById('mcStatusModal').style.display = 'flex';
+}
+
+function setMcStatus(status) {
+  if (_mcEditAreaIdx === null) return;
+  machineAreas[_mcEditAreaIdx].machines[_mcEditMcIdx].status = status;
+  save();
+  closeModal('mcStatusModal');
+  renderPage();
+}
+
+let _editAreaIdx = null;
+let _editMachineAreaIdx = null;
+let _editMachineIdx = null;
+
+function openEditAreaModal(aIdx) {
+  _editAreaIdx = aIdx;
+  const area = machineAreas[aIdx];
+  document.getElementById('edit-area-sub').textContent = `${area.machines.length} เครื่องในพื้นที่นี้`;
+  document.getElementById('edit-area-name').value = area.name;
+  document.getElementById('edit-area-main').style.display = 'block';
+  document.getElementById('edit-area-confirm').style.display = 'none';
+  document.getElementById('editAreaModal').style.display = 'flex';
+}
+function openAddMachineFromArea() {
+  closeModal('editAreaModal');
+  openAddMachineModal(_editAreaIdx);
+}
+function confirmEditArea() {
+  const name = document.getElementById('edit-area-name').value.trim();
+  if (!name) return;
+  machineAreas[_editAreaIdx].name = name;
+  save(); closeModal('editAreaModal'); renderPage();
+}
+function showAreaDeleteConfirm() {
+  const area = machineAreas[_editAreaIdx];
+  document.getElementById('edit-area-confirm-msg').textContent =
+    `ลบพื้นที่ "${area.name}" และเครื่องทั้งหมด ${area.machines.length} เครื่อง จะไม่สามารถกู้คืนได้`;
+  document.getElementById('edit-area-main').style.display = 'none';
+  document.getElementById('edit-area-confirm').style.display = 'block';
+}
+function hideAreaDeleteConfirm() {
+  document.getElementById('edit-area-main').style.display = 'block';
+  document.getElementById('edit-area-confirm').style.display = 'none';
+}
+function doDeleteArea() {
+  machineAreas.splice(_editAreaIdx, 1);
+  save(); closeModal('editAreaModal'); renderPage();
+}
+
+function openEditMachineModal(aIdx, mIdx) {
+  _editMachineAreaIdx = aIdx;
+  _editMachineIdx = mIdx;
+  const m = machineAreas[aIdx].machines[mIdx];
+  document.getElementById('edit-machine-sub').textContent = `พื้นที่: ${machineAreas[aIdx].name}`;
+  document.getElementById('edit-machine-no').value = m.no;
+  document.getElementById('edit-machine-main').style.display = 'block';
+  document.getElementById('edit-machine-confirm').style.display = 'none';
+  document.getElementById('editMachineModal').style.display = 'flex';
+}
+function confirmEditMachine() {
+  const no = document.getElementById('edit-machine-no').value.trim();
+  if (!no) return;
+  machineAreas[_editMachineAreaIdx].machines[_editMachineIdx].no = no;
+  save(); closeModal('editMachineModal'); renderPage();
+}
+function showMachineDeleteConfirm() {
+  const m = machineAreas[_editMachineAreaIdx].machines[_editMachineIdx];
+  document.getElementById('edit-machine-confirm-msg').textContent =
+    `ลบเครื่อง "${m.no}" ออกจากพื้นที่ จะไม่สามารถกู้คืนได้`;
+  document.getElementById('edit-machine-main').style.display = 'none';
+  document.getElementById('edit-machine-confirm').style.display = 'block';
+}
+function hideMachineDeleteConfirm() {
+  document.getElementById('edit-machine-main').style.display = 'block';
+  document.getElementById('edit-machine-confirm').style.display = 'none';
+}
+function doDeleteMachine() {
+  machineAreas[_editMachineAreaIdx].machines.splice(_editMachineIdx, 1);
+  save(); closeModal('editMachineModal'); renderPage();
+}
+
+function openAddMachineModal(aIdx) {
+  _mcAddAreaIdx = aIdx;
+  document.getElementById('add-machine-area-name').textContent = 'พื้นที่: ' + machineAreas[aIdx].name;
+  document.getElementById('new-mc-no').value = '';
+  document.getElementById('addMachineModal').style.display = 'flex';
+}
+
+function confirmAddMachine() {
+  const no = document.getElementById('new-mc-no').value.trim();
+  if (!no) { alert('กรุณากรอก Machine No.'); return; }
+  machineAreas[_mcAddAreaIdx].machines.push({ id: genId(), no, status: 'idle' });
+  save();
+  closeModal('addMachineModal');
+  renderPage();
+}
+
+function openAddAreaModal() {
+  document.getElementById('new-area-name').value = '';
+  document.getElementById('addAreaModal').style.display = 'flex';
+}
+
+function confirmAddArea() {
+  const name = document.getElementById('new-area-name').value.trim();
+  if (!name) { alert('กรุณากรอกชื่อพื้นที่'); return; }
+  machineAreas.push({ id: genId(), name, machines: [] });
+  save();
+  closeModal('addAreaModal');
+  renderPage();
+}
+
+function renderHistory(el) {
+  if (history.length === 0) {
+    el.innerHTML = `<div style="color:var(--muted);padding:32px;text-align:center">ยังไม่มีงานที่เสร็จสิ้น</div>`;
+    return;
+  }
+  const cards = history.map(j => `
+    <div class="history-card">
+      <div class="history-info">
+        <div class="hname">${j.partName || '—'}</div>
+        <div class="hmeta">${j.projectNo || ''} (${j.drawing || '—'}) · ${j.customer || ''} · Quantity: ${j.qty || '—'}</div>
+        <div class="hfg">งานดี (FG): <b style="color:var(--green)">${j.fg ?? '—'}</b> &nbsp; งานเสีย (NG): <b style="color:var(--red)">${j.ng ?? '—'}</b></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Release: ${formatDate(j.date)} &nbsp;|&nbsp; Due: ${formatDate(j.due)} &nbsp;|&nbsp; เสร็จสิ้น: ${j.completedAt || '—'}</div>
+      </div>
+      <button class="btn btn-sm" onclick="restoreJob('${j.id}')">↩ นำกลับ</button>
+    </div>
+  `).join('');
+  el.innerHTML = `<div>${cards}</div>`;
+}
+
+// ========== ACTIONS ==========
+let _addProcs = [];
+
+function renderAddProcChips() {
+  const el = document.getElementById('f-proc-chips');
+  if (!el) return;
+  el.innerHTML = _addProcs.map((p, i) =>
+    `<span class="proc-chip active" style="cursor:default">${p}<span onclick="_addProcs.splice(${i},1);renderAddProcChips()" style="margin-left:5px;cursor:pointer;opacity:0.6;font-size:10px">✕</span></span>`
+  ).join('');
+}
+
+function addAddProc() {
+  const inp = document.getElementById('f-proc-input');
+  const val = inp.value.trim().toUpperCase();
+  if (!val) return;
+  _addProcs.push(val);
+  inp.value = '';
+  renderAddProcChips();
+  inp.focus();
+}
+
+function openAddModal() {
+  editingId = null;
+  _addProcs = [];
+  document.getElementById('modal-title').textContent = 'เพิ่มงานใหม่';
+  document.getElementById('modal-sub').textContent = 'กรอกข้อมูลแบบผลิต';
+  ['date','project','customer','due','partname','drawing','qty'].forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-proc-input').value = '';
+  renderAddProcChips();
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('addModal').style.display = 'flex';
+}
+
+function saveJob() {
+  const date = document.getElementById('f-date').value;
+  const projectNo = document.getElementById('f-project').value.trim();
+  const customer = document.getElementById('f-customer').value.trim();
+  const due = document.getElementById('f-due').value;
+  const partName = document.getElementById('f-partname').value.trim();
+  const drawing = document.getElementById('f-drawing').value.trim();
+  const qty = document.getElementById('f-qty').value;
+  const processes = [..._addProcs];
+
+  if (!partName) { alert('กรุณากรอกชื่องาน (Part Name)'); return; }
+
+  if (editingId) {
+    const j = jobs.find(x => x.id === editingId);
+    if (j) { Object.assign(j, { date, projectNo, customer, due, partName, drawing, qty, processes }); }
+    save();
+    syncToSheet('updateJob', { job: jobToSheet(jobs.find(x => x.id === editingId)) });
+  } else {
+    const newJob = { id: genId(), date, projectNo, customer, due, partName, drawing, qty, processes, dept: 'N/A', currentProc: null, status: 'active', machine: '', fg: null, ng: null };
+    jobs.push(newJob);
+    save();
+    syncToSheet('addJob', { job: jobToSheet(newJob) });
+  }
+  closeModal('addModal');
+  renderPage();
+}
+
+function openCompleteModal(id) {
+  completeId = id;
+  const j = jobs.find(x => x.id === id);
+  document.getElementById('complete-sub').textContent = j ? j.partName : '';
+  document.getElementById('c-fg').value = '';
+  document.getElementById('c-ng').value = '';
+  document.getElementById('completeModal').style.display = 'flex';
+}
+
+function confirmComplete() {
+  const fg = document.getElementById('c-fg').value;
+  const ng = document.getElementById('c-ng').value;
+  const idx = jobs.findIndex(x => x.id === completeId);
+  if (idx === -1) return;
+  const j = jobs[idx];
+  const hJob = { ...j, fg: fg !== '' ? Number(fg) : null, ng: ng !== '' ? Number(ng) : null, status: 'done', completedAt: new Date().toLocaleString('th-TH') };
+  history.unshift(hJob);
+  jobs.splice(idx, 1);
+  save();
+  syncToSheet('moveToHistory', { job: jobToSheet(hJob) });
+  closeModal('completeModal');
+  renderPage();
+}
+
+function restoreJob(id) {
+  const idx = history.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const j = { ...history[idx], status: 'active', dept: 'N/A', fg: null, ng: null, machine: '' };
+  delete j.completedAt;
+  jobs.unshift(j);
+  history.splice(idx, 1);
+  save();
+  syncToSheet('restoreJob', { job: jobToSheet(j) });
+  renderPage();
+}
+
+function toggleJobInfoEdit() {
+  const panel = document.getElementById('job-info-editor');
+  const btn = document.getElementById('btn-edit-info');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '✏️ แก้ไขข้อมูล' : '✖ ปิด';
+}
+
+// Edit modal
+let _editJob = null;
+let _editProcs = [];
+
+function openEditModal(id) {
+  _editJob = jobs.find(x => x.id === id);
+  if (!_editJob) return;
+  editingId = id;
+  editDept = _editJob.dept || 'N/A';
+  editProcIdx = _editJob.currentProc ?? null;
+  _editProcs = [...(_editJob.processes || [])];
+
+  document.getElementById('edit-title').textContent = 'อัปเดตสถานะ';
+  document.getElementById('edit-sub').textContent = _editJob.partName;
+  document.getElementById('e-machine').value = _editJob.machine || '';
+  document.getElementById('e-status').value = _editJob.status === 'stop' ? 'stop' : 'active';
+  document.getElementById('proc-editor').style.display = 'none';
+  document.getElementById('btn-toggle-proc').textContent = '✏️ แก้ไข Process';
+  document.getElementById('job-info-editor').style.display = 'none';
+  document.getElementById('btn-edit-info').textContent = '✏️ แก้ไขข้อมูล';
+
+  // Populate job info fields
+  document.getElementById('ei-date').value = _editJob.date || '';
+  document.getElementById('ei-due').value = _editJob.due || '';
+  document.getElementById('ei-project').value = _editJob.projectNo || '';
+  document.getElementById('ei-customer').value = _editJob.customer || '';
+  document.getElementById('ei-partname').value = _editJob.partName || '';
+  document.getElementById('ei-drawing').value = _editJob.drawing || '';
+  document.getElementById('ei-qty').value = _editJob.qty || '';
+
+  // Dept buttons
+  const dw = document.getElementById('dept-select-wrap');
+  dw.innerHTML = DEPTS.map(d => {
+    const k = deptKey(d);
+    const sel = (d === editDept) ? `sel-${k}` : '';
+    return `<button class="dept-btn ${sel}" onclick="selectDept('${d}',this)">${DEPT_LABELS[k] || d}</button>`;
+  }).join('');
+
+  renderProcSelectList();
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function renderProcSelectList() {
+  const pl = document.getElementById('process-select-list');
+  pl.innerHTML = _editProcs.map((p, i) =>
+    `<span class="proc-chip ${editProcIdx === i ? 'active' : ''}" onclick="selectProc(${i},this)">${p}</span>`
+  ).join('') || '<span style="font-size:12px;color:var(--muted)">ไม่มี Process</span>';
+}
+
+function renderProcEditList() {
+  const el = document.getElementById('proc-edit-list');
+  el.innerHTML = _editProcs.map((p, i) => `
+    <div style="display:flex;align-items:center;gap:6px">
+      <input type="text" value="${p}" oninput="_editProcs[${i}]=this.value;renderProcSelectList()"
+        style="flex:1;font-size:12px;padding:5px 8px">
+      <button class="btn btn-sm btn-danger" onclick="removeProcItem(${i})" style="padding:3px 8px;font-size:12px">✕</button>
+    </div>`).join('');
+}
+
+function toggleEditProcesses() {
+  const ed = document.getElementById('proc-editor');
+  const btn = document.getElementById('btn-toggle-proc');
+  const isOpen = ed.style.display !== 'none';
+  ed.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '✏️ แก้ไข Process' : '✖ ปิด';
+  if (!isOpen) renderProcEditList();
+}
+
+function addProcItem() {
+  const inp = document.getElementById('new-proc-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  _editProcs.push(val);
+  inp.value = '';
+  renderProcEditList();
+  renderProcSelectList();
+}
+
+function removeProcItem(i) {
+  _editProcs.splice(i, 1);
+  if (editProcIdx >= _editProcs.length) editProcIdx = _editProcs.length - 1;
+  if (editProcIdx < 0) editProcIdx = null;
+  renderProcEditList();
+  renderProcSelectList();
+}
+
+function selectDept(dept, btn) {
+  editDept = dept;
+  document.querySelectorAll('#dept-select-wrap .dept-btn').forEach(b => {
+    b.className = 'dept-btn';
+  });
+  btn.className = 'dept-btn sel-' + deptKey(dept);
+}
+
+function selectProc(idx, chip) {
+  editProcIdx = idx;
+  document.querySelectorAll('#process-select-list .proc-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+}
+
+function saveEdit() {
+  const j = jobs.find(x => x.id === editingId);
+  if (!j) return;
+  j.dept = editDept;
+  j.processes = [..._editProcs];
+  j.currentProc = (editProcIdx !== null && editProcIdx < _editProcs.length) ? editProcIdx : null;
+  j.machine = document.getElementById('e-machine').value.trim();
+  j.status = document.getElementById('e-status').value;
+  // Save job info if panel is visible
+  if (document.getElementById('job-info-editor').style.display !== 'none') {
+    j.date = document.getElementById('ei-date').value;
+    j.due = document.getElementById('ei-due').value;
+    j.projectNo = document.getElementById('ei-project').value.trim();
+    j.customer = document.getElementById('ei-customer').value.trim();
+    j.partName = document.getElementById('ei-partname').value.trim() || j.partName;
+    j.drawing = document.getElementById('ei-drawing').value.trim();
+    j.qty = document.getElementById('ei-qty').value;
+  }
+  save();
+  syncToSheet('updateJob', { job: jobToSheet(j) });
+  closeModal('editModal');
+  renderPage();
+}
+
+function buildProcNav(jobId, procs, cur) {
+  if (!procs || procs.length === 0) return `<span style="font-size:10px;color:var(--border);font-family:'IBM Plex Mono',monospace">—</span>`;
+  return procs.map((p, i) =>
+    `<span class="proc-chip ${cur === i ? 'active' : ''}" onclick="quickProcClick('${jobId}',${i})">${p}</span>`
+  ).join('');
+}
+
+function quickProcClick(id, idx) {
+  const j = jobs.find(x => x.id === id);
+  if (!j) return;
+  j.currentProc = (j.currentProc === idx) ? null : idx;
+  save();
+  renderPage();
+}
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function moveCardOrder(orderKey, jobId, dir) {
+  // Get current list for this dept
+  const deptKey = orderKey.replace('order_', '');
+  const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === deptKey);
+  const deptJobs = jobs.filter(j => j.status !== 'done' && j.dept === deptName);
+  let order = JSON.parse(localStorage.getItem(orderKey) || 'null');
+  // Build current order from rendered list
+  if (!order) order = deptJobs.map(j => j.id);
+  const idx = order.indexOf(jobId);
+  if (idx === -1) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= order.length) return;
+  // Swap
+  [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
+  localStorage.setItem(orderKey, JSON.stringify(order));
+  renderPage();
+}
+
+// ========== DRAG SORT ==========
+function initDrag(deptKey) {
+  const tbody = document.getElementById('job-tbody');
+  if (!tbody) return;
+  let dragging = null;
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.draggable = true;
+    row.addEventListener('dragstart', () => { dragging = row; row.style.opacity = '0.4'; });
+    row.addEventListener('dragend', () => {
+      row.style.opacity = '';
+      dragging = null;
+      // Save new order
+      const ids = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
+      localStorage.setItem('order_' + deptKey, JSON.stringify(ids));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (dragging && dragging !== row) {
+        const r = row.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if (e.clientY < mid) tbody.insertBefore(dragging, row);
+        else tbody.insertBefore(dragging, row.nextSibling);
+      }
+    });
+  });
+}
+
+// ========== SIDEBAR ==========
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ========== DEMO DATA ==========
+function loadDemoData() {
+  if (jobs.length > 0) return;
+  const today = new Date();
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x.toISOString().split('T')[0]; };
+  const demos = [
+    { partName: '569-225-1 RING', projectNo: '2002014009', customer: 'CITIZEN', drawing: '1A-2/7', qty: 300, processes: ['LA2','MC1','CL2','AS','WD','CL1','QC','EP'], dept: 'MFG-1.1.', currentProc: 0, due: addDays(today,30) },
+    { partName: '570-113-2 SHAFT', projectNo: '2002015001', customer: 'SEIKO', drawing: '2B-1/3', qty: 150, processes: ['LA1','MC2','CL1','QC'], dept: 'MFG-1.2.', currentProc: 1, due: addDays(today,5) },
+    { partName: '571-001-5 GEAR', projectNo: '2002015002', customer: 'CASIO', drawing: '3C-4/9', qty: 500, processes: ['MC1','CL2','MC2','QC','EP'], dept: 'QC', currentProc: 3, due: addDays(today,14) },
+    { partName: '572-330-3 BEARING', projectNo: '2002015003', customer: 'CITIZEN', drawing: '4A-1/2', qty: 200, processes: ['LA2','MC1','CL1','AS','QC'], dept: 'MFG-1.1.', currentProc: 2, due: addDays(today,-2), status: 'stop' },
+    { partName: '573-220-7 PLATE', projectNo: '2002015004', customer: 'EPSON', drawing: '5B-2/5', qty: 1000, processes: ['MC2','CL2','EP','QC'], dept: 'Other', currentProc: 0, due: addDays(today,60) },
+    { partName: '574-119-1 PIN', projectNo: '2002015005', customer: 'SEIKO', drawing: '6C-3/7', qty: 800, processes: ['LA1','MC1','CL1','QC'], dept: 'N/A', currentProc: null, due: addDays(today,7) },
+    { partName: '575-004-2 CAM', projectNo: '2002015006', customer: 'CITIZEN', drawing: '7A-1/1', qty: 100, processes: ['LA2','MC2','CL2','AS','QC','EP'], dept: 'MFG-1.2.', currentProc: 3, due: addDays(today,21) },
+    { partName: '576-551-9 COLLAR', projectNo: '2002015007', customer: 'CASIO', drawing: '8B-2/4', qty: 250, processes: ['MC1','CL1','QC'], dept: 'QC', currentProc: 2, due: addDays(today,3) },
+    { partName: '577-774-4 LEVER', projectNo: '2002015008', customer: 'EPSON', drawing: '9C-5/6', qty: 75, processes: ['LA2','MC1','MC2','CL2','AS','QC'], dept: 'MFG-1.1.', currentProc: 1, due: addDays(today,45) },
+    { partName: '578-002-6 SPRING', projectNo: '2002015009', customer: 'SEIKO', drawing: '10A-3/3', qty: 2000, processes: ['MC2','CL1','EP','QC'], dept: 'MFG-1.2.', currentProc: 0, due: addDays(today,10), status: 'stop' },
+  ];
+  const dateStr = today.toISOString().split('T')[0];
+  demos.forEach(d => {
+    jobs.push({ id: genId(), date: dateStr, status: d.status || 'active', machine: '', fg: null, ng: null, ...d });
+  });
+  save();
+}
+
+// ========== QUICK INLINE ACTIONS ==========
+function quickToggleStatus(id) {
+  const j = jobs.find(x => x.id === id);
+  if (!j) return;
+  j.status = j.status === 'active' ? 'stop' : 'active';
+  save();
+  renderPage();
+}
+
+let _openDeptDD = null;
+function toggleDeptDD(id, e) {
+  e.stopPropagation();
+  const trigger = e.currentTarget.querySelector('.dept-badge') || e.currentTarget;
+  const dd = document.getElementById('deptdd-' + id);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  if (_openDeptDD && _openDeptDD !== id) {
+    const prev = document.getElementById('deptdd-' + _openDeptDD);
+    if (prev) prev.classList.remove('open');
+  }
+  if (isOpen) { dd.classList.remove('open'); _openDeptDD = null; return; }
+
+  // Position fixed relative to trigger
+  const rect = e.currentTarget.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  dd.classList.add('open');
+  _openDeptDD = id;
+  setTimeout(() => document.addEventListener('click', closeDeptDDs, {once:true}), 30);
+}
+function closeDeptDDs() {
+  document.querySelectorAll('.dept-dropdown.open').forEach(d => d.classList.remove('open'));
+  _openDeptDD = null;
+}
+function quickSetDept(id, dept, e) {
+  e.stopPropagation();
+  const j = jobs.find(x => x.id === id);
+  if (!j) return;
+  j.dept = dept;
+  save();
+  renderPage();
+}
+
+// ========== ASSIGN JOB TO MACHINE ==========
+let _openAssignDD = null;
+
+function toggleAssignDD(machineNo, e) {
+  e.stopPropagation();
+  const ddId = 'assigndd-' + machineNo.replace(/[^a-zA-Z0-9]/g, '');
+  const dd = document.getElementById(ddId);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+
+  // Close any open
+  if (_openAssignDD) {
+    const prev = document.getElementById('assigndd-' + _openAssignDD.replace(/[^a-zA-Z0-9]/g, ''));
+    if (prev) prev.classList.remove('open');
+  }
+  if (isOpen) { dd.classList.remove('open'); _openAssignDD = null; return; }
+
+  // Get jobs that are NOT already on this machine and not done
+  const alreadyOnThis = jobs
+    .filter(j => j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done')
+    .map(j => j.id);
+
+  const available = jobs.filter(j =>
+    j.status !== 'done' &&
+    !alreadyOnThis.includes(j.id)
+  );
+
+  // Build list
+  const listHtml = available.length === 0
+    ? `<div class="mc-assign-empty">ไม่มีงานที่สามารถเพิ่มได้</div>`
+    : available.map(j => {
+        const days = daysLeft(j.due);
+        let dueStr = formatDate(j.due);
+        let dueColor = 'var(--muted)';
+        if (days !== null) {
+          if (days < 0) dueColor = 'var(--red)';
+          else if (days <= 7) dueColor = 'var(--yellow)';
+        }
+        const currentMc = j.machine ? `<span style="color:var(--accent2);font-family:'IBM Plex Mono',monospace"> · ${j.machine}</span>` : '';
+        return `<div class="mc-assign-item" onclick="assignJobToMachine('${j.id}','${machineNo}',event)">
+          <div class="ai-name">${j.partName}</div>
+          <div class="ai-meta">${j.projectNo || ''} · ${j.customer || ''} · Due: <span style="color:${dueColor}">${dueStr}</span>${currentMc}</div>
+        </div>`;
+      }).join('');
+
+  dd.innerHTML = `
+    <div class="mc-assign-dd-header">เลือกงานให้ ${machineNo}</div>
+    <div class="mc-assign-dd-list">${listHtml}</div>`;
+
+  // Position fixed
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  // Flip up if too close to bottom
+  if (rect.bottom + 310 > window.innerHeight) {
+    dd.style.top = (rect.top - 310) + 'px';
+  }
+
+  dd.classList.add('open');
+  _openAssignDD = machineNo;
+  setTimeout(() => document.addEventListener('click', closeAssignDDs, {once:true}), 30);
+}
+
+function closeAssignDDs() {
+  document.querySelectorAll('.mc-assign-dd.open').forEach(d => d.classList.remove('open'));
+  _openAssignDD = null;
+}
+
+function assignJobToMachine(jobId, machineNo, e) {
+  e.stopPropagation();
+  const j = jobs.find(x => x.id === jobId);
+  if (!j) return;
+  j.machine = machineNo;
+  save();
+  closeAssignDDs();
+  renderPage();
+}
+
+// ========== MC DROPDOWN ==========
+let _openMcDD = null;
+
+function toggleMcDD(jobId, e) {
+  e.stopPropagation();
+  const trigger = e.currentTarget;
+  const dd = document.getElementById('mcdd-' + jobId);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  if (_openMcDD && _openMcDD !== jobId) {
+    const prev = document.getElementById('mcdd-' + _openMcDD);
+    if (prev) prev.classList.remove('open');
+  }
+  if (isOpen) { dd.classList.remove('open'); _openMcDD = null; return; }
+
+  // Build dropdown content
+  initMachineAreas();
+  const allNos = getAllMachineNos();
+  let html = '';
+  let lastArea = '';
+  allNos.forEach(({ no, status, areaName }) => {
+    if (areaName !== lastArea) {
+      html += `<div class="mc-dd-section">${areaName}</div>`;
+      lastArea = areaName;
+    }
+    const dotColor = status === 'running' ? 'var(--green)' : status === 'repair' ? 'var(--red)' : status === 'off' ? '#374151' : 'var(--muted)';
+    html += `<div class="mc-dd-item" onclick="quickSetMachine('${jobId}','${no}',event)">
+      <span class="mc-dot" style="background:${dotColor}"></span>${no}
+    </div>`;
+  });
+  html += `<div style="border-top:1px solid var(--border);margin:4px 0"></div>`;
+  html += `<div class="mc-dd-clear" onclick="quickSetMachine('${jobId}','',event)">✕ ไม่ระบุ</div>`;
+  dd.innerHTML = html;
+
+  // Position fixed relative to trigger
+  const rect = trigger.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  dd.classList.add('open');
+  _openMcDD = jobId;
+  setTimeout(() => document.addEventListener('click', closeMcDDs, {once:true}), 30);
+}
+
+function closeMcDDs() {
+  document.querySelectorAll('.mc-dropdown.open').forEach(d => d.classList.remove('open'));
+  _openMcDD = null;
+}
+
+function quickSetMachine(jobId, machineNo, e) {
+  e.stopPropagation();
+  const j = jobs.find(x => x.id === jobId);
+  if (!j) return;
+  j.machine = machineNo;
+  save();
+  renderPage();
+}
+
+// ========== MACHINE QUEUE DRAG ==========
+let _mcqDragging = null;
+
+function mcqDragStart(e) {
+  _mcqDragging = e.currentTarget;
+  e.currentTarget.classList.add('q-dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function mcqDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const target = e.currentTarget;
+  if (!_mcqDragging || target === _mcqDragging) return;
+  const container = target.parentNode;
+  const items = [...container.querySelectorAll('.mc-queue-item')];
+  const dragIdx = items.indexOf(_mcqDragging);
+  const targetIdx = items.indexOf(target);
+  if (dragIdx < targetIdx) container.insertBefore(_mcqDragging, target.nextSibling);
+  else container.insertBefore(_mcqDragging, target);
+}
+
+function mcqDrop(e) {
+  e.preventDefault();
+}
+
+function mcqDragEnd(e) {
+  e.currentTarget.classList.remove('q-dragging');
+  // Save new order
+  const container = e.currentTarget.parentNode;
+  const mcNo = e.currentTarget.dataset.mcno;
+  const ids = [...container.querySelectorAll('.mc-queue-item')].map(el => el.dataset.jid);
+  saveMcQueue(mcNo, ids);
+  _mcqDragging = null;
+  // re-render to update rank indicators
+  renderPage();
+}
+
+// ========== EASY READ MODE ==========
+let easyRead = localStorage.getItem('easyRead') === '1';
+
+function applyEasyRead() {
+  document.body.classList.toggle('easy-read', easyRead);
+  const btn = document.getElementById('easy-read-btn');
+  if (btn) {
+    btn.classList.toggle('active-mode', easyRead);
+    btn.textContent = easyRead ? '👁 ปกติ' : '👁 อ่านง่าย';
+  }
+}
+
+function toggleEasyRead() {
+  easyRead = !easyRead;
+  localStorage.setItem('easyRead', easyRead ? '1' : '0');
+  applyEasyRead();
+}
+
+// ========== COLUMN VISIBILITY ==========
+const COL_DEFS = [
+  { key: 'date',   label: 'Date',    def: true  },
+  { key: 'job',    label: 'Job',     def: true  },
+  { key: 'qty',    label: 'Qty',     def: true  },
+  { key: 'due',    label: 'Due',     def: true  },
+  { key: 'dept',   label: 'Dept',    def: true  },
+  { key: 'proc',   label: 'Process', def: true  },
+  { key: 'status', label: 'Status',  def: true  },
+  { key: 'mc',     label: 'MC',      def: true  },
+  { key: 'action', label: 'Action',  def: true  },
+];
+let colVisible = JSON.parse(localStorage.getItem('colVisible') || 'null');
+if (!colVisible) {
+  colVisible = {};
+  COL_DEFS.forEach(c => colVisible[c.key] = c.def);
+}
+
+function applyColVisibility() {
+  COL_DEFS.forEach(c => {
+    const show = colVisible[c.key];
+    document.querySelectorAll('.cv-' + c.key).forEach(el => {
+      el.classList.toggle('col-hidden', !show);
+    });
+  });
+  localStorage.setItem('colVisible', JSON.stringify(colVisible));
+}
+
+function toggleColPanel() {
+  const panel = document.getElementById('col-panel');
+  const open = panel.style.display !== 'none';
+  if (open) { panel.style.display = 'none'; return; }
+  const wrap = document.getElementById('col-checkboxes');
+  wrap.innerHTML = COL_DEFS.map(c => `
+    <label class="col-check-row" style="padding:5px 8px;border-radius:6px;transition:background 0.1s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <input type="checkbox" ${colVisible[c.key] ? 'checked' : ''} onchange="colVisible['${c.key}']=this.checked;applyColVisibility()">
+      <span style="flex:1">${c.label}</span>
+      ${c.def ? '' : '<span style="font-size:9px;color:var(--muted);background:var(--bg3);padding:1px 5px;border-radius:3px">hidden</span>'}
+    </label>`).join('');
+  panel.style.display = 'block';
+  setTimeout(() => document.addEventListener('click', closeColPanelOutside, {once:true}), 50);
+}
+
+function resetCols() {
+  COL_DEFS.forEach(c => colVisible[c.key] = c.def);
+  applyColVisibility();
+  toggleColPanel(); toggleColPanel(); // re-render checkboxes
+}
+
+function closeColPanelOutside(e) {
+  const p = document.getElementById('col-panel');
+  if (!p.contains(e.target) && e.target.id !== 'col-toggle-btn') {
+    p.style.display = 'none';
+  }
+}
+
+// ========== SIDEBAR DESKTOP TOGGLE ==========
+function toggleSidebarDesktop() {
+  document.body.classList.toggle('sidebar-hidden');
+  // also hide on mobile if needed
+}
+
+// ========== CLEAR DEMO DATA ==========
+function updateClearDemoBtn() {
+  const btn = document.getElementById('clear-demo-btn');
+  if (!btn) return;
+  // ซ่อนถ้ามีงานจริงมากกว่า 5 ชิ้น (นับทั้ง active + history)
+  const total = jobs.length + history.length;
+  btn.style.display = total > 11 ? 'none' : '';
+}
+
+function openClearDemoModal() {
+  document.getElementById('clearDemoModal').style.display = 'flex';
+}
+function confirmClearDemo() {
+  if (document.getElementById('clear-jobs').checked) {
+    jobs = [];
+    localStorage.removeItem('jobs');
+  }
+  if (document.getElementById('clear-history').checked) {
+    history = [];
+    localStorage.removeItem('history');
+  }
+  if (document.getElementById('clear-machines').checked) {
+    machineAreas = null;
+    localStorage.removeItem('machineAreas');
+    initMachineAreas();
+  }
+  save();
+  closeModal('clearDemoModal');
+  renderPage();
+  updateClearDemoBtn();
+}
+
+// ========== LAST UPDATED ==========
+function updateLastUpdated() {
+  const el = document.getElementById('last-updated');
+  if (!el) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  el.textContent = `อัปเดตล่าสุด: ${hh}:${mm}:${ss}`;
+}
+
+// ========== TV MODE ==========
+let tvMode = false;
+let tvClockInterval = null;
+let tvRefreshInterval = null;
+let tvPageInterval = null;
+let tvPageToggle = false; // false=dashboard, true=machines
+
+function toggleTvMode() {
+  tvMode = !tvMode;
+  document.body.classList.toggle('tv-mode', tvMode);
+  document.getElementById('tv-icon').textContent = tvMode ? '✕' : '⛶';
+  document.getElementById('tv-label').textContent = tvMode ? 'ออก' : 'TV Mode';
+  document.getElementById('topbar-add-btn').style.display = tvMode ? 'none' : '';
+
+  if (tvMode) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    startTvClock();
+    // Auto-refresh every 30s — sync from Sheet
+    tvRefreshInterval = setInterval(() => { syncFromSheet(); }, 30000);
+    // Page switching every 30s: Dashboard ↔ Machine Tracking
+    tvPageToggle = false;
+    navigate('dashboard');
+    tvPageInterval = setInterval(() => {
+      tvPageToggle = !tvPageToggle;
+      navigate(tvPageToggle ? 'machines' : 'dashboard');
+    }, 30000);
+  } else {
+    if (document.exitFullscreen && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    stopTvClock();
+    if (tvRefreshInterval) { clearInterval(tvRefreshInterval); tvRefreshInterval = null; }
+    if (tvPageInterval)    { clearInterval(tvPageInterval);    tvPageInterval = null; }
+    renderPage();
+  }
+}
+
+function startTvClock() {
+  updateTvClock();
+  tvClockInterval = setInterval(updateTvClock, 1000);
+}
+
+function stopTvClock() {
+  if (tvClockInterval) { clearInterval(tvClockInterval); tvClockInterval = null; }
+}
+
+function updateTvClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const clockEl = document.getElementById('tv-clock');
+  const dateEl = document.getElementById('tv-date');
+  if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
+  if (dateEl) dateEl.textContent = `${dd}/${mo}/${yyyy}`;
+}
+
+// Exit TV mode when pressing Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && tvMode) toggleTvMode();
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && tvMode) {
+    // Fullscreen exited externally
+  }
+});
+
+// ========== INIT ==========
+loadDemoData();
+initMachineAreas();
+applyEasyRead();
+updateLastUpdated();
+renderPage();
+// Sync จาก Google Sheet ตอนเปิดแอป
+syncFromSheet();
+
+// Re-render on resize (mobile ↔ desktop)
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(renderPage, 150);
+});
+</script>
+</body>
+</html>
