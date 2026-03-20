@@ -3236,10 +3236,15 @@ function buildProcNav(jobId, procs, cur) {
   ).join('');
 }
 
+function stampUpdatedAt(j) {
+  j.updatedAt = new Date().toISOString();
+}
+
 function quickProcClick(id, idx) {
   const j = jobs.find(x => x.id === id);
   if (!j) return;
   j.currentProc = (j.currentProc === idx) ? null : idx;
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
@@ -3351,6 +3356,7 @@ function quickToggleStatus(id) {
   const j = jobs.find(x => x.id === id);
   if (!j) return;
   j.status = j.status === 'active' ? 'stop' : 'active';
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
@@ -3386,6 +3392,7 @@ function quickSetDept(id, dept, e) {
   const j = jobs.find(x => x.id === id);
   if (!j) return;
   j.dept = dept;
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
@@ -3396,9 +3403,9 @@ function removeFromQueue(jobId, machineNo, e) {
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
   j.machine = '';
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
-  // Remove from queue order
   const key = 'mcqueue_' + machineNo.trim().toUpperCase();
   const order = JSON.parse(localStorage.getItem(key) || '[]').filter(id => id !== jobId);
   localStorage.setItem(key, JSON.stringify(order));
@@ -3486,6 +3493,7 @@ function assignJobToMachine(jobId, machineNo, e) {
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
   j.machine = machineNo;
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   closeAssignDDs();
@@ -3545,6 +3553,7 @@ function quickSetMachine(jobId, machineNo, e) {
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
   j.machine = machineNo;
+  stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   renderPage();
