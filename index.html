@@ -2005,7 +2005,8 @@ function parseJobFromSheet(j) {
     machine: j.machine || '',
     fg: j.fg !== '' ? j.fg : null,
     ng: j.ng !== '' ? j.ng : null,
-    completedAt: j.completedAt || ''
+    completedAt: j.completedAt || '',
+    updatedAt: j.updatedAt || ''
   };
 }
 
