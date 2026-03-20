@@ -233,13 +233,13 @@
   }
   body.tv-mode .stats-row {
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     flex-shrink: 0;
   }
-  body.tv-mode .stat-card { padding: 8px 12px; }
-  body.tv-mode .stat-card .value { font-size: 20px; margin-top: 2px; }
-  body.tv-mode .stat-card .label { font-size: 10px; }
-  body.tv-mode .stat-card .sub { font-size: 10px; }
+  body.tv-mode .stat-card { padding: 6px 10px; min-height: 0; }
+  body.tv-mode .stat-card .value { font-size: 18px; margin-top: 2px; }
+  body.tv-mode .stat-card .label { font-size: 9px; min-height: 0; }
+  body.tv-mode .stat-card .sub { font-size: 9px; }
   body.tv-mode .table-wrap {
     flex: 1;
     overflow: hidden;
@@ -301,22 +301,21 @@
     gap: 8px;
     min-height: 0;
     overflow: hidden;
-    align-content: start;
+    align-content: stretch;
     align-items: stretch;
   }
   .tv-job-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-left: 3px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     overflow: hidden;
     min-height: 0;
     justify-content: flex-start;
-    align-self: stretch;
   }
   .tv-job-card.tv-active { border-left-color: var(--green); }
   .tv-job-card.tv-hold   { border-left-color: var(--yellow); }
@@ -1919,6 +1918,15 @@ function parseJobFromSheet(j) {
 
 function jobToSheet(j) {
   const obj = { ...j };
+  // แปลง yyyy-mm-dd → dd/mm/yy ก่อนส่งขึ้น Sheet
+  const fmtDate = v => {
+    if (!v) return v;
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+    return v;
+  };
+  obj.date = fmtDate(obj.date);
+  obj.due  = fmtDate(obj.due);
   // แปลง processes array เป็น Process1-11
   (j.processes || []).forEach((p, i) => { obj['Process' + (i+1)] = p; });
   for (let i = (j.processes || []).length + 1; i <= 11; i++) { obj['Process' + i] = ''; }
@@ -3639,7 +3647,7 @@ function renderTvCards(active) {
 
   return `<div class="tv-card-area">
     ${filterBar}
-    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr)">
+    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)">
       ${cards || '<div style="color:var(--muted);padding:20px">ไม่มีงานที่ตรงเงื่อนไข</div>'}
     </div>
   </div>`;
