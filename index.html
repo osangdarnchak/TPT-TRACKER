@@ -800,6 +800,22 @@
   }
   .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
   .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  /* Edit Modal Tabs */
+  .edit-tab {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .edit-tab:hover { color: var(--text); }
+  .edit-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-group.full { grid-column: 1/-1; }
@@ -1182,6 +1198,13 @@
     gap: 10px;
     overflow: hidden;
   }
+  .job-cards.desktop-cards {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+  .desktop-cards .job-card {
+    height: 100%;
+  }
   @media (min-width: 480px) and (max-width: 768px) {
     .job-cards { grid-template-columns: 1fr 1fr; }
   }
@@ -1202,14 +1225,13 @@
     margin-top: auto;
     display: flex;
     gap: 8px;
+    align-items: center;
+    padding-top: 8px;
   }
   .jc-actions .btn {
     flex: 1;
     justify-content: center;
     white-space: nowrap;
-  }
-  @media (max-width: 768px) {
-    .jc-actions { padding-top: 10px; }
   }
   .job-card.jc-hold { border-left: 3px solid var(--yellow); }
   .job-card.jc-active { border-left: 3px solid var(--green); }
@@ -1631,21 +1653,56 @@
 
 <!-- DEPT/PROCESS EDIT MODAL -->
 <div class="modal-overlay" id="editModal" style="display:none">
-  <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
-      <div>
-        <h2 id="edit-title">อัปเดตสถานะ</h2>
-        <div class="modal-sub" id="edit-sub" style="margin-bottom:0"></div>
+  <div class="modal" style="padding:0;overflow:hidden;max-width:480px">
+
+    <!-- Modal Header -->
+    <div style="padding:16px 20px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+        <div style="min-width:0;flex:1">
+          <div id="edit-title" style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">อัปเดตสถานะ</div>
+          <div id="edit-sub" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+        </div>
+        <button onclick="closeModal('editModal')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 0 0 12px;flex-shrink:0;line-height:1">✕</button>
       </div>
-      <button class="btn btn-sm" onclick="toggleJobInfoEdit()" id="btn-edit-info" title="แก้ไขข้อมูลงาน" style="flex-shrink:0;margin-left:10px">✏️ แก้ไขข้อมูล</button>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0">
+        <button class="edit-tab active" id="edit-tab-0" onclick="switchEditTab(0)">อัปเดต</button>
+        <button class="edit-tab" id="edit-tab-1" onclick="switchEditTab(1)">ข้อมูลงาน</button>
+      </div>
     </div>
 
-    <!-- Job info edit panel (hidden by default) -->
-    <div id="job-info-editor" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;margin-top:12px">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px">แก้ไขข้อมูลแบบผลิต</div>
+    <!-- Tab 0: อัปเดต (แผนก + Process + Machine) -->
+    <div id="edit-panel-0" style="padding:16px 20px;max-height:65vh;overflow-y:auto">
+
+      <!-- แผนก -->
+      <div class="form-group" style="margin-bottom:16px">
+        <label>แผนก</label>
+        <div class="dept-select-wrap" id="dept-select-wrap" style="margin-top:6px"></div>
+      </div>
+
+      <!-- Process chips -->
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Process ปัจจุบัน — กด Chip เพื่อเลือก</label>
+        <div class="process-list" id="process-select-list" style="margin-top:6px"></div>
+      </div>
+
+      <!-- Machine -->
+      <div class="form-group" style="margin-bottom:0">
+        <label>Machine No.</label>
+        <input type="text" id="e-machine" placeholder="CL-01" list="machine-datalist" autocomplete="off" style="margin-top:6px">
+        <datalist id="machine-datalist"></datalist>
+      </div>
+    </div>
+
+    <!-- Tab 1: ข้อมูลงาน -->
+    <div id="edit-panel-1" style="padding:16px 20px;display:none;max-height:65vh;overflow-y:auto">
+
+      <!-- อัปเดตล่าสุด -->
+      <div id="edit-updated-at" style="font-size:11px;color:var(--muted);margin-bottom:14px;padding:6px 10px;background:var(--bg3);border-radius:6px;display:none"></div>
+
       <div class="form-row">
         <div class="form-group">
-          <label>Date (วันที่แจกแบบ)</label>
+          <label>วันที่แจกแบบ</label>
           <input type="date" id="ei-date">
         </div>
         <div class="form-group">
@@ -1659,8 +1716,8 @@
           <input type="text" id="ei-project" placeholder="2002014009">
         </div>
         <div class="form-group">
-          <label>Customer</label>
-          <input type="text" id="ei-customer" placeholder="CITIZEN">
+          <label>Drawing</label>
+          <input type="text" id="ei-drawing" placeholder="1A-2/7">
         </div>
       </div>
       <div class="form-row">
@@ -1671,55 +1728,39 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Drawing No.</label>
-          <input type="text" id="ei-drawing" placeholder="1A-2/7">
+          <label>Customer</label>
+          <input type="text" id="ei-customer" placeholder="CITIZEN">
         </div>
         <div class="form-group">
           <label>Quantity</label>
           <input type="number" id="ei-qty" placeholder="300">
         </div>
       </div>
-    </div>
 
-    <div style="margin-top:12px">
-    <div class="form-group" style="margin-bottom:14px">
-      <label>แผนกปัจจุบัน</label>
-      <div class="dept-select-wrap" id="dept-select-wrap"></div>
-    </div>
-
-    <div class="form-group" style="margin-bottom:6px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label style="margin-bottom:0">Process ปัจจุบัน</label>
-        <button class="btn btn-sm" onclick="toggleEditProcesses()" id="btn-toggle-proc" style="font-size:11px;padding:3px 8px">✏️ แก้ไข Process</button>
-      </div>
-      <div class="process-list" id="process-select-list"></div>
-    </div>
-
-    <!-- Process editor (hidden by default) -->
-    <div id="proc-editor" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">แก้ไขรายการ Process</div>
-      <div id="proc-edit-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
-      <div style="display:flex;gap:6px">
-        <input type="text" id="new-proc-input" placeholder="เพิ่ม Process ใหม่ เช่น LA2" style="flex:1;font-size:12px;padding:6px 8px" onkeydown="if(event.key==='Enter'){event.preventDefault();addProcItem();}">
-        <button class="btn btn-sm btn-primary" onclick="addProcItem()">+ เพิ่ม</button>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Machine No.</label>
-        <input type="text" id="e-machine" placeholder="CL-01">
-      </div>
-      <div class="form-group">
+      <!-- สถานะงาน -->
+      <div class="form-group" style="margin-top:4px;margin-bottom:14px">
         <label>สถานะงาน</label>
-        <select id="e-status">
-          <option value="active">In Process</option>
-          <option value="stop">On Hold</option>
+        <select id="e-status" style="margin-top:6px">
+          <option value="active">▶ In Process</option>
+          <option value="stop">⏸ On Hold</option>
         </select>
       </div>
+
+      <!-- แก้ไขรายการ Process (toggle) -->
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <button class="btn btn-sm" onclick="toggleProcEditor()" id="btn-proc-editor" style="font-size:11px;width:100%;justify-content:center">✏️ แก้ไขรายการ Process</button>
+        <div id="proc-editor" style="display:none;margin-top:10px">
+          <div id="proc-edit-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="new-proc-input" placeholder="เพิ่ม Process เช่น LA2" style="flex:1;font-size:12px;padding:6px 8px" onkeydown="if(event.key==='Enter'){event.preventDefault();addProcItem();}">
+            <button class="btn btn-sm btn-primary" onclick="addProcItem()">+ เพิ่ม</button>
+          </div>
+        </div>
+      </div>
     </div>
-    </div>
-    <div class="form-actions">
+
+    <!-- Footer -->
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
       <button class="btn" onclick="closeModal('editModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
     </div>
@@ -2098,9 +2139,10 @@ function renderPage() {
 }
 
 let dashSort = localStorage.getItem('dashSort') || 'due';
-let dashSortDir = localStorage.getItem('dashSortDir') || 'desc'; // desc = ล่าสุดก่อน
+let dashSortDir = localStorage.getItem('dashSortDir') || 'desc';
 let dashSearch = '';
 let dashDeptFilter = 'all';
+let dashView = localStorage.getItem('dashView') || 'table'; // 'table' | 'card'
 
 function renderDashboard(el) {
   const active = jobs.filter(j => j.status !== 'done');
@@ -2199,6 +2241,10 @@ function renderDashboard(el) {
       <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
       <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
       ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
+      <div style="margin-left:auto;display:flex;gap:2px">
+        <button onclick="setDashView('table')" title="Table view" style="background:${dashView==='table'?'var(--bg3)':'none'};border:1px solid ${dashView==='table'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='table'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">☰</button>
+        <button onclick="setDashView('card')" title="Card view" style="background:${dashView==='card'?'var(--bg3)':'none'};border:1px solid ${dashView==='card'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='card'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">⊞</button>
+      </div>
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
       <div class="mobile-dept-filter">
@@ -2212,7 +2258,7 @@ function renderDashboard(el) {
         }).join('')}
       </div>
     </div>
-    ${tvMode ? renderTvCards(sorted) : renderTable(sorted, true)}
+    ${tvMode ? renderTvCards(sorted) : (dashView === 'card' ? renderCards(sorted, true, null, !isMobile()) : renderTable(sorted, true))}
   `;
   if (q || document.activeElement?.id === 'dash-search') {
     const inp = document.getElementById('dash-search');
@@ -2227,6 +2273,12 @@ function setDashDeptFilter(k) {
 
 function onDashSearch(val) {
   dashSearch = val;
+  renderDashboard(document.getElementById('main-content'));
+}
+
+function setDashView(v) {
+  dashView = v;
+  localStorage.setItem('dashView', v);
   renderDashboard(document.getElementById('main-content'));
 }
 
@@ -2268,11 +2320,11 @@ function formatDate(iso) {
 
 function isMobile() { return window.innerWidth <= 768; }
 
-function renderCards(list, draggable = false, orderKey = null) {
+function renderCards(list, draggable = false, orderKey = null, desktop = false) {
   if (list.length === 0) {
     return `<div style="padding:32px;text-align:center;color:var(--muted)">ยังไม่มีงาน — กด <b>+ เพิ่มงาน</b> เพื่อเริ่มต้น</div>`;
   }
-  return `<div class="job-cards">` + list.map((j, idx) => {
+  return `<div class="job-cards${desktop ? ' desktop-cards' : ''}">` + list.map((j, idx) => {
     const days = daysLeft(j.due);
     let daysChip = '';
     if (days !== null) {
@@ -2322,7 +2374,10 @@ function renderCards(list, draggable = false, orderKey = null) {
         ${daysChip}
       </div>
 
-      ${procs.length > 0 ? `<div class="jc-row">
+      ${desktop ? `<div class="jc-row" style="min-height:52px;align-content:flex-start;flex-wrap:wrap">
+        <span class="jc-label">Process</span>
+        <div class="jc-proc">${chips}</div>
+      </div>` : procs.length > 0 ? `<div class="jc-row">
         <span class="jc-label">Process</span>
         <div class="jc-proc">${chips}</div>
       </div>` : ''}
@@ -2338,6 +2393,7 @@ function renderCards(list, draggable = false, orderKey = null) {
       </div>
 
       <div class="jc-actions">
+        <span style="font-size:10px;color:var(--muted);align-self:center">⏱ ${j.updatedAt ? timeAgo(j.updatedAt) : 'ยังไม่มีการอัปเดต'}</span>
         <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎ อัปเดต</button>
         <button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>
       </div>
@@ -3004,17 +3060,28 @@ function restoreJob(id) {
   renderPage();
 }
 
-function toggleJobInfoEdit() {
-  const panel = document.getElementById('job-info-editor');
-  const btn = document.getElementById('btn-edit-info');
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? '✏️ แก้ไขข้อมูล' : '✖ ปิด';
-}
+// [removed dead function: toggleJobInfoEdit]
 
 // Edit modal
 let _editJob = null;
 let _editProcs = [];
+
+function switchEditTab(idx) {
+  [0,1].forEach(i => {
+    document.getElementById('edit-tab-' + i).classList.toggle('active', i === idx);
+    document.getElementById('edit-panel-' + i).style.display = i === idx ? 'block' : 'none';
+  });
+  if (idx === 1) renderProcEditList();
+}
+
+function toggleProcEditor() {
+  const ed = document.getElementById('proc-editor');
+  const btn = document.getElementById('btn-proc-editor');
+  const isOpen = ed.style.display !== 'none';
+  ed.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '✏️ แก้ไขรายการ Process' : '✖ ซ่อน';
+  if (!isOpen) renderProcEditList();
+}
 
 function openEditModal(id) {
   _editJob = jobs.find(x => x.id === id);
@@ -3024,14 +3091,38 @@ function openEditModal(id) {
   editProcIdx = _editJob.currentProc ?? null;
   _editProcs = [...(_editJob.processes || [])];
 
-  document.getElementById('edit-title').textContent = 'อัปเดตสถานะ';
-  document.getElementById('edit-sub').textContent = _editJob.partName;
+  const drawing = _editJob.drawing ? ` (${_editJob.drawing})` : '';
+  document.getElementById('edit-title').textContent = _editJob.partName || 'อัปเดตสถานะ';
+  document.getElementById('edit-sub').textContent = (_editJob.projectNo || '') + drawing + (_editJob.customer ? ' · ' + _editJob.customer : '');
   document.getElementById('e-machine').value = _editJob.machine || '';
   document.getElementById('e-status').value = _editJob.status === 'stop' ? 'stop' : 'active';
-  document.getElementById('proc-editor').style.display = 'none';
-  document.getElementById('btn-toggle-proc').textContent = '✏️ แก้ไข Process';
-  document.getElementById('job-info-editor').style.display = 'none';
-  document.getElementById('btn-edit-info').textContent = '✏️ แก้ไขข้อมูล';
+
+  // Populate machine datalist from all machines
+  const dl = document.getElementById('machine-datalist');
+  if (dl) {
+    const allMachines = machineAreas.flatMap(a => a.machines.map(m => m.no));
+    dl.innerHTML = allMachines.map(no => `<option value="${no}">`).join('');
+  }
+
+  // Updated at
+  const updEl = document.getElementById('edit-updated-at');
+  if (updEl) {
+    if (_editJob.updatedAt) {
+      updEl.textContent = '⏱ อัปเดตล่าสุด ' + timeAgo(_editJob.updatedAt);
+      updEl.style.display = 'block';
+    } else {
+      updEl.style.display = 'none';
+    }
+  }
+
+  // Reset proc editor
+  const procEd = document.getElementById('proc-editor');
+  if (procEd) { procEd.style.display = 'none'; }
+  const procBtn = document.getElementById('btn-proc-editor');
+  if (procBtn) procBtn.textContent = '✏️ แก้ไขรายการ Process';
+
+  // Reset to tab 0
+  switchEditTab(0);
 
   // Populate job info fields
   document.getElementById('ei-date').value = _editJob.date || '';
@@ -3071,14 +3162,7 @@ function renderProcEditList() {
     </div>`).join('');
 }
 
-function toggleEditProcesses() {
-  const ed = document.getElementById('proc-editor');
-  const btn = document.getElementById('btn-toggle-proc');
-  const isOpen = ed.style.display !== 'none';
-  ed.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? '✏️ แก้ไข Process' : '✖ ปิด';
-  if (!isOpen) renderProcEditList();
-}
+// [removed dead function: toggleEditProcesses]
 
 function addProcItem() {
   const inp = document.getElementById('new-proc-input');
@@ -3112,6 +3196,15 @@ function selectProc(idx, chip) {
   chip.classList.add('active');
 }
 
+function timeAgo(iso) {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60)   return 'เมื่อสักครู่';
+  if (diff < 3600) return `${Math.floor(diff/60)} นาทีที่แล้ว`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} ชั่วโมงที่แล้ว`;
+  return `${Math.floor(diff/86400)} วันที่แล้ว`;
+}
+
 function saveEdit() {
   const j = jobs.find(x => x.id === editingId);
   if (!j) return;
@@ -3120,16 +3213,16 @@ function saveEdit() {
   j.currentProc = (editProcIdx !== null && editProcIdx < _editProcs.length) ? editProcIdx : null;
   j.machine = document.getElementById('e-machine').value.trim();
   j.status = document.getElementById('e-status').value;
-  // Save job info if panel is visible
-  if (document.getElementById('job-info-editor').style.display !== 'none') {
-    j.date = document.getElementById('ei-date').value;
-    j.due = document.getElementById('ei-due').value;
-    j.projectNo = document.getElementById('ei-project').value.trim();
-    j.customer = document.getElementById('ei-customer').value.trim();
-    j.partName = document.getElementById('ei-partname').value.trim() || j.partName;
-    j.drawing = document.getElementById('ei-drawing').value.trim();
-    j.qty = document.getElementById('ei-qty').value;
-  }
+  // Always save job info fields (now always visible in tab 1)
+  j.date = document.getElementById('ei-date').value;
+  j.due = document.getElementById('ei-due').value;
+  j.projectNo = document.getElementById('ei-project').value.trim();
+  j.customer = document.getElementById('ei-customer').value.trim();
+  j.partName = document.getElementById('ei-partname').value.trim() || j.partName;
+  j.drawing = document.getElementById('ei-drawing').value.trim();
+  j.qty = document.getElementById('ei-qty').value;
+  // บันทึกเวลาอัปเดต เป็น ISO string เพื่อคำนวณ time ago
+  j.updatedAt = new Date().toISOString();
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
   closeModal('editModal');
@@ -3154,8 +3247,6 @@ function quickProcClick(id, idx) {
 
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
-  // sync ทันทีเมื่อปิด modal
-  syncFromSheet();
 }
 
 // ========== AUTO-REFRESH ทุก 60 วินาที ==========
@@ -3649,7 +3740,6 @@ let tvFilter = 'all';
 function toggleTvMode() {
   tvMode = !tvMode;
   document.body.classList.toggle('tv-mode', tvMode);
-  document.getElementById('tv-icon') && (document.getElementById('tv-icon').textContent = tvMode ? '✕' : '⛶');
   document.getElementById('tv-label').textContent = tvMode ? 'ออก' : 'TV Mode';
   document.getElementById('topbar-add-btn').style.display = tvMode ? 'none' : '';
 
