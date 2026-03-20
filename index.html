@@ -3154,7 +3154,28 @@ function quickProcClick(id, idx) {
 
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
+  // sync ทันทีเมื่อปิด modal
+  syncFromSheet();
 }
+
+// ========== AUTO-REFRESH ทุก 60 วินาที ==========
+let _autoRefreshInterval = null;
+
+function startAutoRefresh() {
+  if (_autoRefreshInterval) clearInterval(_autoRefreshInterval);
+  _autoRefreshInterval = setInterval(() => {
+    // refresh เฉพาะเมื่อไม่มี modal เปิดอยู่
+    const modals = ['addModal','completeModal','editModal','mcStatusModal',
+                    'addMachineModal','addAreaModal','editAreaModal','editMachineModal','clearDemoModal'];
+    const anyOpen = modals.some(m => {
+      const el = document.getElementById(m);
+      return el && el.style.display !== 'none' && el.style.display !== '';
+    });
+    if (!anyOpen) syncFromSheet();
+  }, 60000);
+}
+
+startAutoRefresh();
 
 function moveCardOrder(orderKey, jobId, dir) {
   const deptK = orderKey.replace('order_', '');
