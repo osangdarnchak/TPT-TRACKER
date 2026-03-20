@@ -220,9 +220,10 @@
   body.tv-mode .sidebar { display: none; }
   body.tv-mode .sidebar-collapse-tab { display: none; }
   body.tv-mode .main { margin-left: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-  body.tv-mode .topbar { padding: 8px 16px; flex-shrink: 0; }
-  body.tv-mode .topbar h1 { font-size: 15px; }
+  body.tv-mode .topbar { padding: 0 16px; height: 46px; }
+  body.tv-mode .topbar h1 { display: none; }
   body.tv-mode .topbar .sub { display: none; }
+  body.tv-mode .topbar > div:first-of-type { display: none; }
   body.tv-mode .content {
     padding: 10px 16px;
     flex: 1;
@@ -300,9 +301,8 @@
     display: grid;
     gap: 8px;
     min-height: 0;
-    overflow: hidden;
-    align-content: stretch;
-    align-items: stretch;
+    align-content: start;
+    align-items: start;
   }
   .tv-job-card {
     background: var(--card);
@@ -325,7 +325,21 @@
   .tv-card-meta { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tv-card-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
   .tv-card-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
-  .tv-card-procs { display: flex; gap: 3px; flex-wrap: wrap; }
+  .tv-card-procs { display: flex; gap: 3px; flex-wrap: wrap; overflow: hidden; }
+  .tv-zoom-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .tv-zoom-ctrl:hover,
+  .tv-zoom-ctrl:focus-within,
+  body.tv-zoom-active .tv-zoom-ctrl { opacity: 1; }
 
   /* TV clock bar */
   .tv-clock-bar {
@@ -485,7 +499,7 @@
     transition: margin-left 0.3s;
   }
   .topbar {
-    padding: 16px 24px;
+    padding: 0 20px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -494,10 +508,45 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    height: 52px;
   }
-  .topbar h1 { font-size: 17px; font-weight: 600; }
-  .topbar .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-  .topbar-right { margin-left: auto; display: flex; gap: 8px; }
+  .topbar h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+  .topbar .sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  /* Topbar divider */
+  .topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  /* Topbar icon buttons */
+  .topbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .topbar-btn:hover { background: var(--bg3); border-color: var(--border); color: var(--text); }
+  .topbar-btn.topbar-btn-accent { color: var(--accent2); }
+  .topbar-btn.topbar-btn-accent:hover { background: rgba(6,182,212,0.08); border-color: rgba(6,182,212,0.3); color: var(--accent2); }
+  .topbar-btn.topbar-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .topbar-btn.topbar-btn-primary:hover { background: #2563eb; border-color: #2563eb; }
+  .topbar-btn svg { flex-shrink: 0; }
   .btn {
     padding: 7px 14px;
     border-radius: 6px;
@@ -1340,8 +1389,8 @@
     .sidebar.open { transform: translateX(0); }
     .main { margin-left: 0; overflow-x: hidden; }
     .content { padding: 12px; overflow-x: hidden; }
-    .topbar { padding: 12px 14px; }
-    .topbar h1 { font-size: 15px; }
+    .topbar { padding: 0 14px; height: 52px; }
+    .topbar h1 { font-size: 14px; }
     .hamburger {
       display: flex; align-items: center; justify-content: center;
       width: 36px; height: 36px; border-radius: 6px;
@@ -1448,17 +1497,20 @@
       <span class="tv-badge">📺 TV MODE</span>
       <span class="tv-date" id="tv-date"></span>
       <span class="tv-clock" id="tv-clock"></span>
+      <span id="tv-sync-status" style="font-size:10px;color:var(--muted);margin-left:12px;padding-left:12px;border-left:1px solid var(--border)"></span>
     </div>
     <div class="topbar-right">
-      <button class="btn" id="theme-toggle-btn" onclick="toggleTheme()" title="สลับ Dark/Light Mode" style="padding:7px 12px;display:flex;align-items:center;gap:6px">
+      <button class="topbar-btn topbar-btn-accent" onclick="syncFromSheet()" title="Refresh ข้อมูล">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh
+      </button>
+      <div class="topbar-divider"></div>
+      <button class="topbar-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="สลับ Dark/Light Mode">
         <span id="theme-icon">🌙</span>
         <span id="theme-label">Dark</span>
       </button>
-      <button class="btn" onclick="syncFromSheet()" style="border-color:var(--accent2);color:var(--accent2)" title="Refresh ข้อมูล">
-        ⟳ Refresh
-      </button>
-      <button class="btn" id="tv-mode-btn" onclick="toggleTvMode()" title="TV / Full Screen Mode" style="padding:7px 10px">
-        <span id="tv-icon">⛶</span>
+      <button class="topbar-btn topbar-btn-primary" id="tv-mode-btn" onclick="toggleTvMode()" title="TV / Full Screen Mode">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span id="tv-label">TV Mode</span>
       </button>
     </div>
@@ -1934,13 +1986,6 @@ function jobToSheet(j) {
   return obj;
 }
 
-function updateSyncStatus(state) {
-  const el = document.getElementById('sync-status');
-  if (!el) return;
-  if (state === 'loading') { el.textContent = '⟳ กำลัง sync...'; el.style.color = 'var(--accent2)'; }
-  else if (state === 'ok')  { el.textContent = '✓ Synced'; el.style.color = 'var(--green)'; }
-  else if (state === 'error'){ el.textContent = '✕ Sync ล้มเหลว'; el.style.color = 'var(--red)'; }
-}
 let jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
 let history = JSON.parse(localStorage.getItem('history') || '[]');
 let machineAreas = JSON.parse(localStorage.getItem('machineAreas') || 'null');
@@ -2053,6 +2098,7 @@ function renderPage() {
 }
 
 let dashSort = localStorage.getItem('dashSort') || 'due';
+let dashSortDir = localStorage.getItem('dashSortDir') || 'desc'; // desc = ล่าสุดก่อน
 let dashSearch = '';
 let dashDeptFilter = 'all';
 
@@ -2067,9 +2113,15 @@ function renderDashboard(el) {
   let sorted = [...active];
   if (dashSort === 'due') {
     sorted.sort((a, b) => {
-      const da = a.due ? new Date(a.due) : new Date('9999-12-31');
-      const db = b.due ? new Date(b.due) : new Date('9999-12-31');
+      const da = a.due ? new Date(a.due.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('9999-12-31');
+      const db = b.due ? new Date(b.due.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('9999-12-31');
       return da - db;
+    });
+  } else if (dashSort === 'added') {
+    sorted.sort((a, b) => {
+      const da = a.date ? new Date(a.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
+      const db = b.date ? new Date(b.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
+      return dashSortDir === 'desc' ? db - da : da - db;
     });
   }
 
@@ -2145,7 +2197,7 @@ function renderDashboard(el) {
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
       <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
-      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date</button>
+      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
       ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -2179,8 +2231,15 @@ function onDashSearch(val) {
 }
 
 function setDashSort(mode) {
-  dashSort = mode;
-  localStorage.setItem('dashSort', mode);
+  if (mode === 'added' && dashSort === 'added') {
+    dashSortDir = dashSortDir === 'desc' ? 'asc' : 'desc';
+    localStorage.setItem('dashSortDir', dashSortDir);
+  } else {
+    dashSort = mode;
+    dashSortDir = 'desc';
+    localStorage.setItem('dashSort', mode);
+    localStorage.setItem('dashSortDir', dashSortDir);
+  }
   renderPage();
 }
 
@@ -3529,14 +3588,34 @@ function confirmClearDemo() {
 }
 
 // ========== LAST UPDATED ==========
+function updateSyncStatus(state) {
+  const el = document.getElementById('sync-status');
+  const tvEl = document.getElementById('tv-sync-status');
+  if (state === 'loading') {
+    if (el) { el.textContent = '⟳ syncing...'; el.style.color = 'var(--muted)'; }
+    if (tvEl) { tvEl.textContent = '⟳ syncing...'; tvEl.style.color = 'var(--muted)'; }
+  } else if (state === 'ok') {
+    if (el) { el.textContent = '✓ Synced'; el.style.color = 'var(--muted)'; }
+    if (tvEl) { tvEl.style.color = 'var(--muted)'; }
+  } else if (state === 'error') {
+    if (el) { el.textContent = '✕ Sync ล้มเหลว'; el.style.color = 'var(--red)'; }
+    if (tvEl) { tvEl.style.color = 'var(--red)'; }
+  }
+}
+
 function updateLastUpdated() {
   const el = document.getElementById('last-updated');
-  if (!el) return;
+  const tvEl = document.getElementById('tv-sync-status');
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');
   const mm = String(now.getMinutes()).padStart(2,'0');
   const ss = String(now.getSeconds()).padStart(2,'0');
-  el.textContent = `อัปเดตล่าสุด: ${hh}:${mm}:${ss}`;
+  const timeStr = `${hh}:${mm}:${ss}`;
+  if (el) el.textContent = `อัปเดตล่าสุด: ${timeStr}`;
+  if (tvEl && tvEl.style.color !== 'var(--red)') {
+    tvEl.textContent = `✓ ${timeStr}`;
+    tvEl.style.color = 'var(--muted)';
+  }
 }
 
 // ========== TV MODE ==========
@@ -3549,7 +3628,7 @@ let tvFilter = 'all';
 function toggleTvMode() {
   tvMode = !tvMode;
   document.body.classList.toggle('tv-mode', tvMode);
-  document.getElementById('tv-icon').textContent = tvMode ? '✕' : '⛶';
+  document.getElementById('tv-icon') && (document.getElementById('tv-icon').textContent = tvMode ? '✕' : '⛶');
   document.getElementById('tv-label').textContent = tvMode ? 'ออก' : 'TV Mode';
   document.getElementById('topbar-add-btn').style.display = tvMode ? 'none' : '';
 
@@ -3561,6 +3640,7 @@ function toggleTvMode() {
     tvFilter = 'all';
     navigate('dashboard');
     tvRefreshInterval = setInterval(() => { syncFromSheet(); }, 30000);
+    setTimeout(applyTvZoom, 100);
   } else {
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
@@ -3568,6 +3648,8 @@ function toggleTvMode() {
     stopTvClock();
     if (tvRefreshInterval) { clearInterval(tvRefreshInterval); tvRefreshInterval = null; }
     if (tvPageInterval)    { clearInterval(tvPageInterval);    tvPageInterval = null; }
+    const content = document.querySelector('.main');
+    if (content) content.style.zoom = 1;
     renderPage();
   }
 }
@@ -3577,16 +3659,31 @@ function setTvFilter(f) {
   renderPage();
 }
 
+let tvZoom = parseFloat(localStorage.getItem('tvZoom') || '1');
+
+function setTvZoom(delta) {
+  tvZoom = Math.min(2, Math.max(0.5, Math.round((tvZoom + delta) * 10) / 10));
+  localStorage.setItem('tvZoom', tvZoom);
+  applyTvZoom();
+}
+
+function applyTvZoom() {
+  const content = document.querySelector('.main');
+  if (content) content.style.zoom = tvZoom;
+  const zoomEl = document.getElementById('tv-zoom-label');
+  if (zoomEl) zoomEl.textContent = Math.round(tvZoom * 100) + '%';
+}
+
 function renderTvCards(active) {
   let list = [...active];
   if (tvFilter === 'active')  list = list.filter(j => j.status === 'active');
   if (tvFilter === 'hold')    list = list.filter(j => j.status === 'stop');
   if (tvFilter === 'overdue') list = list.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0);
 
-  // Auto-fit columns based on count
   const count = list.length || 1;
   const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
   const rows = Math.ceil(count / cols);
+  const cardH = 130;
 
   const nActive = active.filter(j => j.status === 'active').length;
   const nHold = active.filter(j => j.status === 'stop').length;
@@ -3599,7 +3696,14 @@ function renderTvCards(active) {
       <button class="tv-filter-btn ${tvFilter==='hold'?'active':''}" onclick="setTvFilter('hold')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-right:4px;vertical-align:middle"></span>On Hold (${nHold})</button>
       <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
     </div>
-    <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols} คอลัมน์ × ${rows} แถว</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="tv-zoom-ctrl" id="tv-zoom-ctrl">
+        <button onclick="setTvZoom(-0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">−</button>
+        <span id="tv-zoom-label" style="font-size:11px;color:var(--muted);min-width:36px;text-align:center;padding:0 4px">${Math.round(tvZoom*100)}%</span>
+        <button onclick="setTvZoom(0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">＋</button>
+      </div>
+      <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows}</span>
+    </div>
   </div>`;
 
   const cards = list.map(j => {
@@ -3641,13 +3745,13 @@ function renderTvCards(active) {
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10px">${formatDate(j.due)}</span>
         ${daysChip}
       </div>
-      ${procs.length > 0 ? `<div class="tv-card-procs">${procChips}</div>` : ''}
+      <div class="tv-card-procs" style="min-height:52px;align-content:flex-start">${procChips}</div>
     </div>`;
   }).join('');
 
   return `<div class="tv-card-area">
     ${filterBar}
-    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)">
+    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr);grid-auto-rows:${cardH}px">
       ${cards || '<div style="color:var(--muted);padding:20px">ไม่มีงานที่ตรงเงื่อนไข</div>'}
     </div>
   </div>`;
@@ -3675,6 +3779,17 @@ function updateTvClock() {
   if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
   if (dateEl) dateEl.textContent = `${dd}/${mo}/${yyyy}`;
 }
+
+let _tvZoomHideTimer = null;
+function showTvZoom() {
+  document.body.classList.add('tv-zoom-active');
+  clearTimeout(_tvZoomHideTimer);
+  _tvZoomHideTimer = setTimeout(() => {
+    document.body.classList.remove('tv-zoom-active');
+  }, 3000);
+}
+document.addEventListener('mousemove', () => { if (tvMode) showTvZoom(); });
+document.addEventListener('keydown', () => { if (tvMode) showTvZoom(); });
 
 // Exit TV mode when pressing Escape
 document.addEventListener('keydown', e => {
