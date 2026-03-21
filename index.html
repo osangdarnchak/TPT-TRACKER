@@ -233,14 +233,21 @@
     min-height: 0;
   }
   body.tv-mode .stats-row {
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
+    margin-bottom: 6px;
     flex-shrink: 0;
   }
-  body.tv-mode .stat-card { padding: 6px 10px; min-height: 0; }
-  body.tv-mode .stat-card .value { font-size: 18px; margin-top: 2px; }
-  body.tv-mode .stat-card .label { font-size: 9px; min-height: 0; }
-  body.tv-mode .stat-card .sub { font-size: 9px; }
+  body.tv-mode .stat-card {
+    padding: 5px 10px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  body.tv-mode .stat-card .label { font-size: 9px; min-height: 0; line-height: 1.2; }
+  body.tv-mode .stat-card .value { font-size: 22px; margin-top: 2px; line-height: 1; }
+  body.tv-mode .stat-card .sub { font-size: 9px; margin-top: 1px; }
+  body.tv-mode .content { padding: 8px 16px; }
   body.tv-mode .table-wrap {
     flex: 1;
     overflow: hidden;
@@ -3872,8 +3879,8 @@ function renderTvCards(active) {
   const _statsEl  = document.querySelector('.stats-row');
   const _topbarH  = _topbarEl ? _topbarEl.offsetHeight : 46;
   const _statsH   = _statsEl  ? _statsEl.offsetHeight  : 100;
-  const _filterH  = 44;
-  const _padH     = 20;
+  const _filterH  = 38; // tv-filter-bar จริงบน TV
+  const _padH     = 16; // padding 8px top+bottom
   const _gapH     = 8 * Math.max(rows - 1, 0);
   const _avail    = window.innerHeight - _topbarH - _statsH - _filterH - _padH - _gapH;
   const cardH     = Math.min(200, Math.max(80, Math.floor(_avail / rows)));
