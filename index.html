@@ -3891,7 +3891,13 @@ function renderTvCards(active) {
     </div>
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows} · ${cardH}px</span>
-      <button onclick="alert('w:'+window.innerWidth+' h:'+window.innerHeight+' topbar:'+document.querySelector('.topbar').offsetHeight+' stats:'+document.querySelector('.stats-row').offsetHeight)" style="background:rgba(255,255,255,0.1);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:2px 6px;cursor:pointer">📐</button>
+      <span id="tv-debug-info" style="font-size:10px;color:var(--accent2);cursor:pointer" onclick="
+        const el = document.getElementById('tv-debug-info');
+        const t = document.querySelector('.topbar');
+        const s = document.querySelector('.stats-row');
+        const f = document.querySelector('.tv-filter-bar');
+        el.textContent = 'w:'+window.innerWidth+' h:'+window.innerHeight+' top:'+(t?t.offsetHeight:0)+' stat:'+(s?s.offsetHeight:0)+' flt:'+(f?f.offsetHeight:0);
+      ">📐</span>
     </div>
   </div>`;
 
