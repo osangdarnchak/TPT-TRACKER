@@ -1526,6 +1526,18 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         Refresh
       </button>
+      <!-- TV: zoom + countdown (สลับกันตาม activity) -->
+      <div id="tv-topbar-ctrl" style="display:none;align-items:center;gap:4px">
+        <div class="tv-zoom-ctrl" id="tv-zoom-ctrl" style="opacity:1">
+          <button onclick="setTvZoom(-0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">−</button>
+          <span id="tv-zoom-label" style="font-size:11px;color:var(--muted);min-width:36px;text-align:center;padding:0 4px">100%</span>
+          <button onclick="setTvZoom(0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">＋</button>
+        </div>
+        <div id="tv-countdown" style="font-size:11px;color:var(--muted);min-width:52px;text-align:center;display:none;align-items:center;gap:5px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="tv-countdown-val">30</span>s
+        </div>
+      </div>
       <div class="topbar-divider"></div>
       <button class="topbar-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="สลับ Dark/Light Mode">
         <span id="theme-icon">🌙</span>
@@ -3760,8 +3772,19 @@ function toggleTvMode() {
     startTvClock();
     tvFilter = 'all';
     navigate('dashboard');
-    tvRefreshInterval = setInterval(() => { syncFromSheet(); }, 30000);
-    setTimeout(applyTvZoom, 100);
+    tvRefreshInterval = setInterval(() => { syncFromSheet(); resetTvCountdown(); }, 30000);
+    setTimeout(() => {
+      applyTvZoom();
+      // แสดง tv-topbar-ctrl
+      const ctrl = document.getElementById('tv-topbar-ctrl');
+      if (ctrl) ctrl.style.display = 'flex';
+      // เริ่ม countdown และแสดงทันที (ไม่มี activity)
+      const zoom = document.getElementById('tv-zoom-ctrl');
+      const cd = document.getElementById('tv-countdown');
+      if (zoom) zoom.style.display = 'none';
+      if (cd) cd.style.display = 'flex';
+      startTvCountdown();
+    }, 100);
   } else {
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
@@ -3769,6 +3792,9 @@ function toggleTvMode() {
     stopTvClock();
     if (tvRefreshInterval) { clearInterval(tvRefreshInterval); tvRefreshInterval = null; }
     if (tvPageInterval)    { clearInterval(tvPageInterval);    tvPageInterval = null; }
+    if (_tvCountdownInterval) { clearInterval(_tvCountdownInterval); _tvCountdownInterval = null; }
+    const ctrl = document.getElementById('tv-topbar-ctrl');
+    if (ctrl) ctrl.style.display = 'none';
     const content = document.querySelector('.main');
     if (content) content.style.zoom = 1;
     renderPage();
@@ -3781,11 +3807,15 @@ function setTvFilter(f) {
 }
 
 let tvZoom = parseFloat(localStorage.getItem('tvZoom') || '1');
+let _tvCountdownVal = 30;
+let _tvCountdownInterval = null;
+let _tvActivityTimer = null;
 
 function setTvZoom(delta) {
   tvZoom = Math.min(2, Math.max(0.5, Math.round((tvZoom + delta) * 10) / 10));
   localStorage.setItem('tvZoom', tvZoom);
   applyTvZoom();
+  showTvActivity();
 }
 
 function applyTvZoom() {
@@ -3793,6 +3823,39 @@ function applyTvZoom() {
   if (content) content.style.zoom = tvZoom;
   const zoomEl = document.getElementById('tv-zoom-label');
   if (zoomEl) zoomEl.textContent = Math.round(tvZoom * 100) + '%';
+}
+
+function startTvCountdown() {
+  if (_tvCountdownInterval) clearInterval(_tvCountdownInterval);
+  _tvCountdownVal = 30;
+  _updateCountdown();
+  _tvCountdownInterval = setInterval(() => {
+    _tvCountdownVal = Math.max(0, _tvCountdownVal - 1);
+    _updateCountdown();
+  }, 1000);
+}
+
+function resetTvCountdown() {
+  _tvCountdownVal = 30;
+  _updateCountdown();
+}
+
+function _updateCountdown() {
+  const el = document.getElementById('tv-countdown-val');
+  if (el) el.textContent = _tvCountdownVal;
+}
+
+function showTvActivity() {
+  if (!tvMode) return;
+  const zoom = document.getElementById('tv-zoom-ctrl');
+  const cd = document.getElementById('tv-countdown');
+  if (zoom) zoom.style.display = 'flex';
+  if (cd) cd.style.display = 'none';
+  clearTimeout(_tvActivityTimer);
+  _tvActivityTimer = setTimeout(() => {
+    if (zoom) zoom.style.display = 'none';
+    if (cd) cd.style.display = 'flex';
+  }, 3000);
 }
 
 function renderTvCards(active) {
@@ -3804,7 +3867,16 @@ function renderTvCards(active) {
   const count = list.length || 1;
   const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
   const rows = Math.ceil(count / cols);
-  const cardH = 130;
+  // คำนวณ cardH จาก DOM จริง (แบบ B + cap)
+  const _topbarEl = document.querySelector('.topbar');
+  const _statsEl  = document.querySelector('.stats-row');
+  const _topbarH  = _topbarEl ? _topbarEl.offsetHeight : 46;
+  const _statsH   = _statsEl  ? _statsEl.offsetHeight  : 100;
+  const _filterH  = 44;
+  const _padH     = 20;
+  const _gapH     = 8 * Math.max(rows - 1, 0);
+  const _avail    = window.innerHeight - _topbarH - _statsH - _filterH - _padH - _gapH;
+  const cardH     = Math.min(200, Math.max(80, Math.floor(_avail / rows)));
 
   const nActive = active.filter(j => j.status === 'active').length;
   const nHold = active.filter(j => j.status === 'stop').length;
@@ -3818,12 +3890,7 @@ function renderTvCards(active) {
       <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
-      <div class="tv-zoom-ctrl" id="tv-zoom-ctrl">
-        <button onclick="setTvZoom(-0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">−</button>
-        <span id="tv-zoom-label" style="font-size:11px;color:var(--muted);min-width:36px;text-align:center;padding:0 4px">${Math.round(tvZoom*100)}%</span>
-        <button onclick="setTvZoom(0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">＋</button>
-      </div>
-      <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows}</span>
+      <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows} · ${cardH}px</span>
     </div>
   </div>`;
 
@@ -3901,16 +3968,8 @@ function updateTvClock() {
   if (dateEl) dateEl.textContent = `${dd}/${mo}/${yyyy}`;
 }
 
-let _tvZoomHideTimer = null;
-function showTvZoom() {
-  document.body.classList.add('tv-zoom-active');
-  clearTimeout(_tvZoomHideTimer);
-  _tvZoomHideTimer = setTimeout(() => {
-    document.body.classList.remove('tv-zoom-active');
-  }, 3000);
-}
-document.addEventListener('mousemove', () => { if (tvMode) showTvZoom(); });
-document.addEventListener('keydown', () => { if (tvMode) showTvZoom(); });
+document.addEventListener('mousemove', () => { if (tvMode) showTvActivity(); });
+document.addEventListener('keydown', () => { if (tvMode) showTvActivity(); });
 
 // Exit TV mode when pressing Escape
 document.addEventListener('keydown', e => {
