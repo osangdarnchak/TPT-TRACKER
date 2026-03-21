@@ -238,15 +238,18 @@
     flex-shrink: 0;
   }
   body.tv-mode .stat-card {
-    padding: 5px 10px;
+    padding: 4px 10px;
     min-height: 0;
+    height: 58px;
     display: flex;
     flex-direction: column;
-    gap: 0;
+    overflow: hidden;
   }
-  body.tv-mode .stat-card .label { font-size: 9px; min-height: 0; line-height: 1.2; }
-  body.tv-mode .stat-card .value { font-size: 22px; margin-top: 2px; line-height: 1; }
+  body.tv-mode .stat-card .label { font-size: 9px; line-height: 1.2; }
+  body.tv-mode .stat-card .value { font-size: 20px; margin-top: 2px; line-height: 1; }
   body.tv-mode .stat-card .sub { font-size: 9px; margin-top: 1px; }
+  /* ซ่อนการ์ดแผนกใน TV mode เพื่อประหยัดพื้นที่ */
+  body.tv-mode .dash-stats .stat-card:last-child { display: none; }
   body.tv-mode .content { padding: 8px 16px; }
   body.tv-mode .table-wrap {
     flex: 1;
@@ -2162,13 +2165,13 @@ function renderPage() {
       const grid = document.getElementById('tv-grid-main');
       if (!grid) return;
       const gridTop = grid.getBoundingClientRect().top;
-      const avail = window.innerHeight - gridTop - 8;
+      const avail = window.innerHeight - gridTop - 10;
       const cols = grid.style.gridTemplateColumns.split(' ').length;
       const rows = Math.ceil(grid.children.length / cols);
       if (rows < 1) return;
       const newH = Math.min(200, Math.max(80, Math.floor((avail - 8*(rows-1)) / rows)));
       grid.style.gridAutoRows = newH + 'px';
-    }, 50);
+    }, 150);
   }
 }
 
@@ -3890,10 +3893,9 @@ function renderTvCards(active) {
   const rows = Math.ceil(count / cols);
   // คำนวณ cardH — ใช้ค่าประมาณก่อน แล้ว fix หลัง DOM พร้อม
   const _topbarEl = document.querySelector('.topbar');
-  const _statsEl  = document.querySelector('.stats-row');
-  const _filterBarH = document.querySelector('.tv-filter-bar')?.offsetHeight || 38;
   const _topbarH  = _topbarEl ? _topbarEl.offsetHeight : 46;
-  const _statsH   = _statsEl  ? _statsEl.offsetHeight  : 80;
+  const _statsH   = 58 + 6; // fixed height + margin-bottom
+  const _filterBarH = 38;
   const _padH     = 16;
   const _gapH     = 8 * Math.max(rows - 1, 0);
   const _avail    = window.innerHeight - _topbarH - _statsH - _filterBarH - _padH - _gapH;
