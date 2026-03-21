@@ -311,8 +311,7 @@
     display: grid;
     gap: 8px;
     min-height: 0;
-    align-content: start;
-    align-items: start;
+    overflow: hidden;
   }
   .tv-job-card {
     background: var(--card);
@@ -325,16 +324,18 @@
     gap: 4px;
     overflow: hidden;
     min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
     justify-content: flex-start;
   }
   .tv-job-card.tv-active { border-left-color: var(--green); }
   .tv-job-card.tv-hold   { border-left-color: var(--yellow); }
   .tv-job-card.tv-over   { border-left-color: var(--red); }
   .tv-card-top { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
-  .tv-card-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; line-height: 1.3; padding-top: 1px; }
-  .tv-card-meta { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tv-card-name { font-weight: 700; font-size: var(--tv-font, 13px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; line-height: 1.3; padding-top: 1px; }
+  .tv-card-meta { font-size: calc(var(--tv-font, 13px) - 3px); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tv-card-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-  .tv-card-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+  .tv-card-label { font-size: calc(var(--tv-font, 13px) - 4px); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
   .tv-card-procs { display: flex; gap: 3px; flex-wrap: wrap; overflow: hidden; }
   .tv-zoom-ctrl {
     display: flex;
@@ -3784,6 +3785,7 @@ function toggleTvMode() {
     tvRefreshInterval = setInterval(() => { syncFromSheet(); resetTvCountdown(); }, 30000);
     setTimeout(() => {
       applyTvZoom();
+      applyTvSettings();
       // แสดง tv-topbar-ctrl
       const ctrl = document.getElementById('tv-topbar-ctrl');
       if (ctrl) ctrl.style.display = 'flex';
@@ -3816,14 +3818,36 @@ function toggleTvSettings() {
 }
 
 function adjustTvCardH(delta) {
-  const cur = parseInt(localStorage.getItem('tvCardH') || '130');
+  const cur = parseInt(localStorage.getItem('tvCardH') || '120');
   const next = Math.min(300, Math.max(60, cur + delta));
   localStorage.setItem('tvCardH', next);
-  // อัปเดต label และ grid ทันทีโดยไม่ต้อง re-render
   const label = document.getElementById('tv-cardh-label');
   if (label) label.textContent = next + 'px';
+  // อัปเดต grid ทันที
   const grid = document.getElementById('tv-grid-main');
-  if (grid) grid.style.gridAutoRows = next + 'px';
+  if (grid) {
+    const cols = parseInt(grid.style.gridTemplateColumns.match(/repeat\((\d+)/)?.[1] || 6);
+    const rows = Math.ceil(grid.children.length / cols);
+    grid.style.gridTemplateRows = `repeat(${rows},${next}px)`;
+  }
+}
+
+function adjustTvFont(delta) {
+  const cur = parseInt(localStorage.getItem('tvFont') || '13');
+  const next = Math.min(18, Math.max(8, cur + delta));
+  localStorage.setItem('tvFont', next);
+  const label = document.getElementById('tv-font-label');
+  if (label) label.textContent = next + 'px';
+  document.documentElement.style.setProperty('--tv-font', next + 'px');
+}
+
+function adjustTvStatFont(delta) {
+  const cur = parseInt(localStorage.getItem('tvStatFont') || '20');
+  const next = Math.min(32, Math.max(12, cur + delta));
+  localStorage.setItem('tvStatFont', next);
+  const label = document.getElementById('tv-statfont-label');
+  if (label) label.textContent = next + 'px';
+  document.querySelectorAll('body.tv-mode .stat-card .value').forEach(el => el.style.fontSize = next + 'px');
 }
 
 function resetTvCardH() {
@@ -3831,7 +3855,18 @@ function resetTvCardH() {
   const label = document.getElementById('tv-cardh-label');
   if (label) label.textContent = '120px';
   const grid = document.getElementById('tv-grid-main');
-  if (grid) grid.style.gridAutoRows = '120px';
+  if (grid) {
+    const cols = parseInt(grid.style.gridTemplateColumns.match(/repeat\((\d+)/)?.[1] || 6);
+    const rows = Math.ceil(grid.children.length / cols);
+    grid.style.gridTemplateRows = `repeat(${rows},120px)`;
+  }
+}
+
+function applyTvSettings() {
+  const font = parseInt(localStorage.getItem('tvFont') || '13');
+  const statFont = parseInt(localStorage.getItem('tvStatFont') || '20');
+  document.documentElement.style.setProperty('--tv-font', font + 'px');
+  document.querySelectorAll('body.tv-mode .stat-card .value').forEach(el => el.style.fontSize = statFont + 'px');
 }
 
 function setTvFilter(f) {
@@ -3916,17 +3951,33 @@ function renderTvCards(active) {
     <div style="display:flex;align-items:center;gap:6px;position:relative">
       <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows} · ${cardH}px</span>
       <button onclick="toggleTvSettings()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer">⚙️</button>
-      <div id="tv-settings-panel" style="display:none;position:absolute;right:0;top:28px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:180px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">TV Settings</div>
+      <div id="tv-settings-panel" style="display:none;position:absolute;right:0;top:28px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:200px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px">⚙️ TV Settings</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:11px;color:var(--text)">ความสูงการ์ด</span>
           <div style="display:flex;align-items:center;gap:4px">
             <button onclick="adjustTvCardH(-5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
-            <span id="tv-cardh-label" style="font-size:11px;color:var(--accent2);min-width:32px;text-align:center">${cardH}px</span>
+            <span id="tv-cardh-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${cardH}px</span>
             <button onclick="adjustTvCardH(5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
           </div>
         </div>
-        <button onclick="resetTvCardH()" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset (120px)</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text)">font การ์ด</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="adjustTvFont(-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-font-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${parseInt(localStorage.getItem('tvFont')||'13')}px</span>
+            <button onclick="adjustTvFont(1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;color:var(--text)">font Stat</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="adjustTvStatFont(-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-statfont-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${parseInt(localStorage.getItem('tvStatFont')||'20')}px</span>
+            <button onclick="adjustTvStatFont(1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+          </div>
+        </div>
+        <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvFont');localStorage.removeItem('tvStatFont');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset ทั้งหมด</button>
       </div>
     </div>
   </div>`;
@@ -3976,7 +4027,7 @@ function renderTvCards(active) {
 
   return `<div class="tv-card-area">
     ${filterBar}
-    <div class="tv-grid" id="tv-grid-main" style="grid-template-columns:repeat(${cols},1fr);grid-auto-rows:${cardH}px">
+    <div class="tv-grid" id="tv-grid-main" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},${cardH}px)">
       ${cards || '<div style="color:var(--muted);padding:20px">ไม่มีงานที่ตรงเงื่อนไข</div>'}
     </div>
   </div>`;
