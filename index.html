@@ -2156,6 +2156,20 @@ function renderPage() {
   applyColVisibility();
   updateClearDemoBtn();
 
+  // Post-render: fix TV grid height using actual DOM position
+  if (currentPage === 'dashboard' && tvMode) {
+    setTimeout(() => {
+      const grid = document.getElementById('tv-grid-main');
+      if (!grid) return;
+      const gridTop = grid.getBoundingClientRect().top;
+      const avail = window.innerHeight - gridTop - 8;
+      const cols = grid.style.gridTemplateColumns.split(' ').length;
+      const rows = Math.ceil(grid.children.length / cols);
+      if (rows < 1) return;
+      const newH = Math.min(200, Math.max(80, Math.floor((avail - 8*(rows-1)) / rows)));
+      grid.style.gridAutoRows = newH + 'px';
+    }, 50);
+  }
 }
 
 let dashSort = localStorage.getItem('dashSort') || 'due';
@@ -3874,15 +3888,15 @@ function renderTvCards(active) {
   const count = list.length || 1;
   const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
   const rows = Math.ceil(count / cols);
-  // คำนวณ cardH จาก DOM จริง (แบบ B + cap)
+  // คำนวณ cardH — ใช้ค่าประมาณก่อน แล้ว fix หลัง DOM พร้อม
   const _topbarEl = document.querySelector('.topbar');
   const _statsEl  = document.querySelector('.stats-row');
+  const _filterBarH = document.querySelector('.tv-filter-bar')?.offsetHeight || 38;
   const _topbarH  = _topbarEl ? _topbarEl.offsetHeight : 46;
-  const _statsH   = _statsEl  ? _statsEl.offsetHeight  : 100;
-  const _filterH  = 38; // tv-filter-bar จริงบน TV
-  const _padH     = 16; // padding 8px top+bottom
+  const _statsH   = _statsEl  ? _statsEl.offsetHeight  : 80;
+  const _padH     = 16;
   const _gapH     = 8 * Math.max(rows - 1, 0);
-  const _avail    = window.innerHeight - _topbarH - _statsH - _filterH - _padH - _gapH;
+  const _avail    = window.innerHeight - _topbarH - _statsH - _filterBarH - _padH - _gapH;
   const cardH     = Math.min(200, Math.max(80, Math.floor(_avail / rows)));
 
   const nActive = active.filter(j => j.status === 'active').length;
@@ -3953,7 +3967,7 @@ function renderTvCards(active) {
 
   return `<div class="tv-card-area">
     ${filterBar}
-    <div class="tv-grid" style="grid-template-columns:repeat(${cols},1fr);grid-auto-rows:${cardH}px">
+    <div class="tv-grid" id="tv-grid-main" style="grid-template-columns:repeat(${cols},1fr);grid-auto-rows:${cardH}px">
       ${cards || '<div style="color:var(--muted);padding:20px">ไม่มีงานที่ตรงเงื่อนไข</div>'}
     </div>
   </div>`;
