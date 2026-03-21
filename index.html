@@ -2158,21 +2158,6 @@ function renderPage() {
   else renderDept(el, currentPage);
   applyColVisibility();
   updateClearDemoBtn();
-
-  // Post-render: fix TV grid height using actual DOM position
-  if (currentPage === 'dashboard' && tvMode) {
-    setTimeout(() => {
-      const grid = document.getElementById('tv-grid-main');
-      if (!grid) return;
-      const gridTop = grid.getBoundingClientRect().top;
-      const avail = window.innerHeight - gridTop - 10;
-      const cols = grid.style.gridTemplateColumns.split(' ').length;
-      const rows = Math.ceil(grid.children.length / cols);
-      if (rows < 1) return;
-      const newH = Math.min(200, Math.max(80, Math.floor((avail - 8*(rows-1)) / rows)));
-      grid.style.gridAutoRows = newH + 'px';
-    }, 150);
-  }
 }
 
 let dashSort = localStorage.getItem('dashSort') || 'due';
@@ -3825,6 +3810,30 @@ function toggleTvMode() {
   }
 }
 
+function toggleTvSettings() {
+  const p = document.getElementById('tv-settings-panel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function adjustTvCardH(delta) {
+  const cur = parseInt(localStorage.getItem('tvCardH') || '130');
+  const next = Math.min(300, Math.max(60, cur + delta));
+  localStorage.setItem('tvCardH', next);
+  // อัปเดต label และ grid ทันทีโดยไม่ต้อง re-render
+  const label = document.getElementById('tv-cardh-label');
+  if (label) label.textContent = next + 'px';
+  const grid = document.getElementById('tv-grid-main');
+  if (grid) grid.style.gridAutoRows = next + 'px';
+}
+
+function resetTvCardH() {
+  localStorage.removeItem('tvCardH');
+  const label = document.getElementById('tv-cardh-label');
+  if (label) label.textContent = '120px';
+  const grid = document.getElementById('tv-grid-main');
+  if (grid) grid.style.gridAutoRows = '120px';
+}
+
 function setTvFilter(f) {
   tvFilter = f;
   renderPage();
@@ -3891,15 +3900,7 @@ function renderTvCards(active) {
   const count = list.length || 1;
   const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
   const rows = Math.ceil(count / cols);
-  // คำนวณ cardH — ใช้ค่าประมาณก่อน แล้ว fix หลัง DOM พร้อม
-  const _topbarEl = document.querySelector('.topbar');
-  const _topbarH  = _topbarEl ? _topbarEl.offsetHeight : 46;
-  const _statsH   = 58 + 6; // fixed height + margin-bottom
-  const _filterBarH = 38;
-  const _padH     = 16;
-  const _gapH     = 8 * Math.max(rows - 1, 0);
-  const _avail    = window.innerHeight - _topbarH - _statsH - _filterBarH - _padH - _gapH;
-  const cardH     = Math.min(200, Math.max(80, Math.floor(_avail / rows)));
+  const cardH = parseInt(localStorage.getItem('tvCardH') || '120');
 
   const nActive = active.filter(j => j.status === 'active').length;
   const nHold = active.filter(j => j.status === 'stop').length;
@@ -3912,15 +3913,21 @@ function renderTvCards(active) {
       <button class="tv-filter-btn ${tvFilter==='hold'?'active':''}" onclick="setTvFilter('hold')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-right:4px;vertical-align:middle"></span>On Hold (${nHold})</button>
       <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
+    <div style="display:flex;align-items:center;gap:6px;position:relative">
       <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows} · ${cardH}px</span>
-      <span id="tv-debug-info" style="font-size:10px;color:var(--accent2);cursor:pointer" onclick="
-        const el = document.getElementById('tv-debug-info');
-        const t = document.querySelector('.topbar');
-        const s = document.querySelector('.stats-row');
-        const f = document.querySelector('.tv-filter-bar');
-        el.textContent = 'w:'+window.innerWidth+' h:'+window.innerHeight+' top:'+(t?t.offsetHeight:0)+' stat:'+(s?s.offsetHeight:0)+' flt:'+(f?f.offsetHeight:0);
-      ">📐</span>
+      <button onclick="toggleTvSettings()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer">⚙️</button>
+      <div id="tv-settings-panel" style="display:none;position:absolute;right:0;top:28px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:180px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">TV Settings</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text)">ความสูงการ์ด</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="adjustTvCardH(-5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-cardh-label" style="font-size:11px;color:var(--accent2);min-width:32px;text-align:center">${cardH}px</span>
+            <button onclick="adjustTvCardH(5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+          </div>
+        </div>
+        <button onclick="resetTvCardH()" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset (120px)</button>
+      </div>
     </div>
   </div>`;
 
