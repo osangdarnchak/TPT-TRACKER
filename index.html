@@ -238,15 +238,16 @@
     flex-shrink: 0;
   }
   body.tv-mode .stat-card {
-    padding: 4px 10px;
+    padding: 6px 10px;
     min-height: 0;
-    height: 58px;
+    height: 62px;
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
     overflow: hidden;
   }
-  body.tv-mode .stat-card .label { font-size: 9px; line-height: 1.2; }
-  body.tv-mode .stat-card .value { font-size: 20px; margin-top: 2px; line-height: 1; }
+  body.tv-mode .stat-card .label { font-size: 9px; line-height: 1.2; margin-bottom: 0; min-height: 0; }
+  body.tv-mode .stat-card .value { font-size: 18px; line-height: 1.1; margin-top: 1px; }
   body.tv-mode .stat-card .sub { font-size: 9px; margin-top: 1px; }
   /* ซ่อนการ์ดแผนกใน TV mode เพื่อประหยัดพื้นที่ */
   body.tv-mode .dash-stats .stat-card:last-child { display: none; }
@@ -3938,12 +3939,11 @@ function renderTvCards(active) {
 
   const filterBar = `<div class="tv-filter-bar" style="justify-content:space-between">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <button class="tv-filter-btn ${tvFilter==='all'?'active':''}" onclick="setTvFilter('all')">ทั้งหมด (${active.length})</button>
+      <button class="tv-filter-btn ${tvFilter==='all'?'active':''}" onclick="setTvFilter('all');setTvDeptFilter('all')">ทั้งหมด (${active.length})</button>
       <button class="tv-filter-btn ${tvFilter==='active'?'active':''}" onclick="setTvFilter('active')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle"></span>In Process (${nActive})</button>
       <button class="tv-filter-btn ${tvFilter==='hold'?'active':''}" onclick="setTvFilter('hold')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-right:4px;vertical-align:middle"></span>On Hold (${nHold})</button>
       <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
       <span style="width:1px;height:16px;background:var(--border);margin:0 2px"></span>
-      <button class="tv-filter-btn ${tvDeptFilter==='all'?'active':''}" onclick="setTvDeptFilter('all')" style="font-size:10px;padding:3px 8px">ทุกแผนก</button>
       ${Object.entries(DEPT_LABELS).map(([k,label]) => {
         const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === k);
         const cnt = active.filter(j => j.dept === deptName).length;
