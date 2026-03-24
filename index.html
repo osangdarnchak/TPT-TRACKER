@@ -2265,6 +2265,7 @@ function renderDashboard(el) {
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
       <div class="mobile-dept-filter">
+        <button class="btn btn-sm" style="font-size:10px;padding:2px 8px;opacity:${dashDeptFilter==='all'?'1':'0.6'};${dashDeptFilter==='all'?'outline:2px solid currentColor;outline-offset:1px':''}" onclick="setDashDeptFilter('all')">ทั้งหมด</button>
         ${DEPTS.map(d => {
           const k = DEPT_KEYS[d];
           const cnt = active.filter(j => j.dept === d).length;
@@ -3762,6 +3763,7 @@ let tvClockInterval = null;
 let tvRefreshInterval = null;
 let tvPageInterval = null;
 let tvFilter = 'all';
+let tvDeptFilter = 'all';
 
 function toggleTvMode() {
   tvMode = !tvMode;
@@ -3775,6 +3777,7 @@ function toggleTvMode() {
     }
     startTvClock();
     tvFilter = 'all';
+    tvDeptFilter = 'all';
     navigate('dashboard');
     tvRefreshInterval = setInterval(() => { syncFromSheet(); resetTvCountdown(); }, 30000);
     setTimeout(() => {
@@ -3857,6 +3860,11 @@ function setTvFilter(f) {
   renderPage();
 }
 
+function setTvDeptFilter(d) {
+  tvDeptFilter = d;
+  renderPage();
+}
+
 let tvZoom = parseFloat(localStorage.getItem('tvZoom') || '1');
 let _tvCountdownVal = 30;
 let _tvCountdownInterval = null;
@@ -3914,6 +3922,10 @@ function renderTvCards(active) {
   if (tvFilter === 'active')  list = list.filter(j => j.status === 'active');
   if (tvFilter === 'hold')    list = list.filter(j => j.status === 'stop');
   if (tvFilter === 'overdue') list = list.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0);
+  if (tvDeptFilter !== 'all') {
+    const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === tvDeptFilter);
+    list = list.filter(j => j.dept === deptName);
+  }
 
   const count = list.length || 1;
   const cols = count <= 2 ? count : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : count <= 12 ? 4 : count <= 15 ? 5 : 6;
@@ -3925,11 +3937,19 @@ function renderTvCards(active) {
   const nOver = active.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0).length;
 
   const filterBar = `<div class="tv-filter-bar" style="justify-content:space-between">
-    <div style="display:flex;gap:6px;align-items:center">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <button class="tv-filter-btn ${tvFilter==='all'?'active':''}" onclick="setTvFilter('all')">ทั้งหมด (${active.length})</button>
       <button class="tv-filter-btn ${tvFilter==='active'?'active':''}" onclick="setTvFilter('active')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle"></span>In Process (${nActive})</button>
       <button class="tv-filter-btn ${tvFilter==='hold'?'active':''}" onclick="setTvFilter('hold')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-right:4px;vertical-align:middle"></span>On Hold (${nHold})</button>
       <button class="tv-filter-btn ${tvFilter==='overdue'?'active':''}" onclick="setTvFilter('overdue')"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>เกิน Due (${nOver})</button>
+      <span style="width:1px;height:16px;background:var(--border);margin:0 2px"></span>
+      <button class="tv-filter-btn ${tvDeptFilter==='all'?'active':''}" onclick="setTvDeptFilter('all')" style="font-size:10px;padding:3px 8px">ทุกแผนก</button>
+      ${Object.entries(DEPT_LABELS).map(([k,label]) => {
+        const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === k);
+        const cnt = active.filter(j => j.dept === deptName).length;
+        if (cnt === 0) return '';
+        return `<button class="tv-filter-btn dept-${k} ${tvDeptFilter===k?'active':''}" onclick="setTvDeptFilter('${k}')" style="font-size:10px;padding:3px 8px">${label} <span style="opacity:0.7">(${cnt})</span></button>`;
+      }).join('')}
     </div>
     <div style="display:flex;align-items:center;gap:6px;position:relative">
       <span style="font-size:10px;color:var(--muted)">${list.length} งาน · ${cols}×${rows} · ${cardH}px</span>
