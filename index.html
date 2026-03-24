@@ -277,11 +277,8 @@
 
   /* TV CARD GRID */
   .tv-card-area {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
   }
   .tv-filter-bar {
     display: flex;
@@ -307,11 +304,8 @@
   .tv-filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .tv-filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
   .tv-grid {
-    flex: 1;
     display: grid;
     gap: 8px;
-    min-height: 0;
-    overflow: hidden;
   }
   .tv-job-card {
     background: var(--card);
@@ -3832,22 +3826,13 @@ function adjustTvCardH(delta) {
   }
 }
 
-function adjustTvFont(delta) {
-  const cur = parseInt(localStorage.getItem('tvFont') || '13');
-  const next = Math.min(18, Math.max(8, cur + delta));
-  localStorage.setItem('tvFont', next);
-  const label = document.getElementById('tv-font-label');
-  if (label) label.textContent = next + 'px';
-  document.documentElement.style.setProperty('--tv-font', next + 'px');
-}
-
-function adjustTvStatFont(delta) {
-  const cur = parseInt(localStorage.getItem('tvStatFont') || '20');
-  const next = Math.min(32, Math.max(12, cur + delta));
-  localStorage.setItem('tvStatFont', next);
-  const label = document.getElementById('tv-statfont-label');
-  if (label) label.textContent = next + 'px';
-  document.querySelectorAll('body.tv-mode .stat-card .value').forEach(el => el.style.fontSize = next + 'px');
+function adjustTvCardZoom(delta) {
+  const cur = parseFloat(localStorage.getItem('tvCardZoom') || '1');
+  const next = Math.min(1.5, Math.max(0.5, Math.round((cur + delta) * 10) / 10));
+  localStorage.setItem('tvCardZoom', next);
+  const label = document.getElementById('tv-cardzoom-label');
+  if (label) label.textContent = Math.round(next * 100) + '%';
+  document.querySelectorAll('.tv-job-card').forEach(el => el.style.zoom = next);
 }
 
 function resetTvCardH() {
@@ -3863,10 +3848,8 @@ function resetTvCardH() {
 }
 
 function applyTvSettings() {
-  const font = parseInt(localStorage.getItem('tvFont') || '13');
-  const statFont = parseInt(localStorage.getItem('tvStatFont') || '20');
-  document.documentElement.style.setProperty('--tv-font', font + 'px');
-  document.querySelectorAll('body.tv-mode .stat-card .value').forEach(el => el.style.fontSize = statFont + 'px');
+  const cardZoom = parseFloat(localStorage.getItem('tvCardZoom') || '1');
+  document.querySelectorAll('.tv-job-card').forEach(el => el.style.zoom = cardZoom);
 }
 
 function setTvFilter(f) {
@@ -3961,23 +3944,15 @@ function renderTvCards(active) {
             <button onclick="adjustTvCardH(5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:11px;color:var(--text)">font การ์ด</span>
-          <div style="display:flex;align-items:center;gap:4px">
-            <button onclick="adjustTvFont(-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
-            <span id="tv-font-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${parseInt(localStorage.getItem('tvFont')||'13')}px</span>
-            <button onclick="adjustTvFont(1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
-          </div>
-        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:11px;color:var(--text)">font Stat</span>
+          <span style="font-size:11px;color:var(--text)">ซูมการ์ด</span>
           <div style="display:flex;align-items:center;gap:4px">
-            <button onclick="adjustTvStatFont(-1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
-            <span id="tv-statfont-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${parseInt(localStorage.getItem('tvStatFont')||'20')}px</span>
-            <button onclick="adjustTvStatFont(1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+            <button onclick="adjustTvCardZoom(-0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-cardzoom-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${Math.round(parseFloat(localStorage.getItem('tvCardZoom')||'1')*100)}%</span>
+            <button onclick="adjustTvCardZoom(0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
           </div>
         </div>
-        <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvFont');localStorage.removeItem('tvStatFont');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset ทั้งหมด</button>
+        <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvCardZoom');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset ทั้งหมด</button>
       </div>
     </div>
   </div>`;
