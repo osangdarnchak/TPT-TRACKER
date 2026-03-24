@@ -2249,9 +2249,9 @@ function renderDashboard(el) {
       <div style="position:relative;flex:1">
         <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
         <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
-          value="${dashSearch}" oninput="onDashSearch(this.value)"
+          oninput="onDashSearch(this.value)"
           style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
-        ${dashSearch ? `<button onclick="onDashSearch('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">✕</button>` : ''}
+        <button id="dash-search-clear" onclick="onDashSearch('');document.getElementById('dash-search').value='';document.getElementById('dash-search').focus()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;display:none">✕</button>
       </div>
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
@@ -2259,6 +2259,7 @@ function renderDashboard(el) {
       <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
       <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
       ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
+      <span id="dash-found-count" style="font-size:11px;color:var(--accent)"></span>
       <div style="margin-left:auto;display:flex;gap:2px">
         <button onclick="setDashView('table')" title="Table view" style="background:${dashView==='table'?'var(--bg3)':'none'};border:1px solid ${dashView==='table'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='table'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">☰</button>
         <button onclick="setDashView('card')" title="Card view" style="background:${dashView==='card'?'var(--bg3)':'none'};border:1px solid ${dashView==='card'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='card'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">⊞</button>
@@ -2277,28 +2278,68 @@ function renderDashboard(el) {
         }).join('')}
       </div>
     </div>
-    ${tvMode ? renderTvCards(sorted) : (dashView === 'card' ? renderCards(sorted, true, null, !isMobile()) : renderTable(sorted, true))}
+    <div id="dash-jobs"></div>
   `;
-  if (q || document.activeElement?.id === 'dash-search') {
-    const inp = document.getElementById('dash-search');
-    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
-  }
+  renderDashJobs();
 }
 
 function setDashDeptFilter(k) {
   dashDeptFilter = k;
-  renderDashboard(document.getElementById('main-content'));
+  renderDashJobs();
+}
+
+function renderDashJobs() {
+  const el = document.getElementById('dash-jobs');
+  if (!el) return;
+  const active = jobs.filter(j => j.status !== 'done');
+  let sorted = [...active];
+  if (dashSort === 'due') {
+    sorted.sort((a, b) => {
+      const da = a.due ? new Date(a.due.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('9999-12-31');
+      const db = b.due ? new Date(b.due.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('9999-12-31');
+      return da - db;
+    });
+  } else if (dashSort === 'added') {
+    sorted.sort((a, b) => {
+      const da = a.date ? new Date(a.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
+      const db = b.date ? new Date(b.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
+      return dashSortDir === 'desc' ? db - da : da - db;
+    });
+  }
+  if (dashDeptFilter !== 'all') {
+    const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === dashDeptFilter);
+    sorted = sorted.filter(j => j.dept === deptName);
+  }
+  const q = dashSearch.trim().toLowerCase();
+  if (q) {
+    sorted = sorted.filter(j =>
+      (j.partName || '').toLowerCase().includes(q) ||
+      (j.projectNo || '').toLowerCase().includes(q) ||
+      (j.customer || '').toLowerCase().includes(q) ||
+      (j.drawing || '').toLowerCase().includes(q) ||
+      (j.machine || '').toLowerCase().includes(q)
+    );
+  }
+  // อัปเดต clear button
+  const clearBtn = document.getElementById('dash-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+  // อัปเดต found count
+  const foundEl = document.getElementById('dash-found-count');
+  if (foundEl) foundEl.textContent = (q || dashDeptFilter !== 'all') ? `พบ ${sorted.length} งาน` : '';
+
+  el.innerHTML = tvMode ? renderTvCards(sorted) :
+    (dashView === 'card' ? renderCards(sorted, true, null, !isMobile()) : renderTable(sorted, true));
 }
 
 function onDashSearch(val) {
   dashSearch = val;
-  renderDashboard(document.getElementById('main-content'));
+  renderDashJobs();
 }
 
 function setDashView(v) {
   dashView = v;
   localStorage.setItem('dashView', v);
-  renderDashboard(document.getElementById('main-content'));
+  renderDashJobs();
 }
 
 function setDashSort(mode) {
@@ -2311,7 +2352,7 @@ function setDashSort(mode) {
     localStorage.setItem('dashSort', mode);
     localStorage.setItem('dashSortDir', dashSortDir);
   }
-  renderPage();
+  renderDashJobs();
 }
 
 function renderDept(el, deptKey) {
