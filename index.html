@@ -1531,14 +1531,9 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         Refresh
       </button>
-      <!-- TV: zoom + countdown (สลับกันตาม activity) -->
+      <!-- TV: countdown only -->
       <div id="tv-topbar-ctrl" style="display:none;align-items:center;gap:4px">
-        <div class="tv-zoom-ctrl" id="tv-zoom-ctrl" style="opacity:1">
-          <button onclick="setTvZoom(-0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">−</button>
-          <span id="tv-zoom-label" style="font-size:11px;color:var(--muted);min-width:36px;text-align:center;padding:0 4px">100%</span>
-          <button onclick="setTvZoom(0.1)" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-weight:700;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">＋</button>
-        </div>
-        <div id="tv-countdown" style="font-size:11px;color:var(--muted);min-width:52px;text-align:center;display:none;align-items:center;gap:5px">
+        <div id="tv-countdown" style="font-size:11px;color:var(--muted);min-width:52px;text-align:center;display:flex;align-items:center;gap:5px">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span id="tv-countdown-val">30</span>s
         </div>
@@ -2173,6 +2168,8 @@ function renderPage() {
       if (label) label.textContent = newH + 'px';
       const info = grid.closest('.tv-card-area')?.querySelector('.tv-grid + *') ||
                    document.querySelector('.tv-filter-bar span');
+      // apply zoom หลัง render ใหม่
+      applyTvSettings();
     }, 100);
   }
 }
@@ -3913,9 +3910,33 @@ function resetTvCardH() {
   }
 }
 
+function adjustTvStatH(delta) {
+  const cur = parseInt(localStorage.getItem('tvStatH') || '62');
+  const next = Math.min(120, Math.max(40, cur + delta));
+  localStorage.setItem('tvStatH', next);
+  const label = document.getElementById('tv-stath-label');
+  if (label) label.textContent = next + 'px';
+  document.querySelectorAll('body.tv-mode .stat-card').forEach(el => el.style.height = next + 'px');
+}
+
+function adjustTvStatZoom(delta) {
+  const cur = parseFloat(localStorage.getItem('tvStatZoom') || '1');
+  const next = Math.min(1.5, Math.max(0.5, Math.round((cur + delta) * 10) / 10));
+  localStorage.setItem('tvStatZoom', next);
+  const label = document.getElementById('tv-statzoom-label');
+  if (label) label.textContent = Math.round(next * 100) + '%';
+  document.querySelectorAll('body.tv-mode .stat-card').forEach(el => el.style.zoom = next);
+}
+
 function applyTvSettings() {
   const cardZoom = parseFloat(localStorage.getItem('tvCardZoom') || '1');
   document.querySelectorAll('.tv-job-card').forEach(el => el.style.zoom = cardZoom);
+  const statZoom = parseFloat(localStorage.getItem('tvStatZoom') || '1');
+  const statH = parseInt(localStorage.getItem('tvStatH') || '62');
+  document.querySelectorAll('body.tv-mode .stat-card').forEach(el => {
+    el.style.zoom = statZoom;
+    el.style.height = statH + 'px';
+  });
 }
 
 function setTvFilter(f) {
@@ -3968,16 +3989,7 @@ function _updateCountdown() {
 }
 
 function showTvActivity() {
-  if (!tvMode) return;
-  const zoom = document.getElementById('tv-zoom-ctrl');
-  const cd = document.getElementById('tv-countdown');
-  if (zoom) zoom.style.display = 'flex';
-  if (cd) cd.style.display = 'none';
-  clearTimeout(_tvActivityTimer);
-  _tvActivityTimer = setTimeout(() => {
-    if (zoom) zoom.style.display = 'none';
-    if (cd) cd.style.display = 'flex';
-  }, 3000);
+  // ไม่มี zoom ctrl แล้ว ไม่ต้องทำอะไร
 }
 
 function renderTvCards(active) {
@@ -4028,7 +4040,7 @@ function renderTvCards(active) {
             <button onclick="adjustTvCardH(5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:11px;color:var(--text)">ซูมการ์ด</span>
           <div style="display:flex;align-items:center;gap:4px">
             <button onclick="adjustTvCardZoom(-0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
@@ -4036,7 +4048,25 @@ function renderTvCards(active) {
             <button onclick="adjustTvCardZoom(0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
           </div>
         </div>
-        <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvCardZoom');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset (Auto)</button>
+        <div style="border-top:1px solid var(--border);margin:8px 0;opacity:0.4"></div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.6px">Stat Card</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text)">ความสูง</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="adjustTvStatH(-2)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-stath-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${parseInt(localStorage.getItem('tvStatH')||'62')}px</span>
+            <button onclick="adjustTvStatH(2)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;color:var(--text)">ซูม</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="adjustTvStatZoom(-0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+            <span id="tv-statzoom-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">${Math.round(parseFloat(localStorage.getItem('tvStatZoom')||'1')*100)}%</span>
+            <button onclick="adjustTvStatZoom(0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+          </div>
+        </div>
+        <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvCardZoom');localStorage.removeItem('tvStatH');localStorage.removeItem('tvStatZoom');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset (Auto)</button>
       </div>
     </div>
   </div>`;
