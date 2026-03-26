@@ -2149,26 +2149,27 @@ function renderPage() {
   applyColVisibility();
   updateClearDemoBtn();
 
-  // Auto-calc cardH บน TV เมื่อไม่มี manual override
-  if (tvMode && !localStorage.getItem('tvCardH')) {
+  // TV mode post-render
+  if (tvMode) {
     setTimeout(() => {
-      const grid = document.getElementById('tv-grid-main');
-      if (!grid) return;
-      const gridTop = grid.getBoundingClientRect().top;
-      const avail = window.innerHeight - gridTop - 10;
-      // นับ rows จาก cols attribute
-      const colMatch = grid.style.gridTemplateColumns.match(/repeat\((\d+)/);
-      const c = colMatch ? parseInt(colMatch[1]) : 6;
-      const r = Math.ceil(grid.children.length / c);
-      if (r < 1) return;
-      const newH = Math.min(300, Math.max(60, Math.floor((avail - 8*(r-1)) / r)));
-      grid.style.gridTemplateRows = `repeat(${r},${newH}px)`;
-      // อัปเดต label
-      const label = document.getElementById('tv-cardh-label');
-      if (label) label.textContent = newH + 'px';
-      const info = grid.closest('.tv-card-area')?.querySelector('.tv-grid + *') ||
-                   document.querySelector('.tv-filter-bar span');
-      // apply zoom หลัง render ใหม่
+      // Auto-calc cardH เมื่อไม่มี manual override
+      if (!localStorage.getItem('tvCardH')) {
+        const grid = document.getElementById('tv-grid-main');
+        if (grid) {
+          const gridTop = grid.getBoundingClientRect().top;
+          const avail = window.innerHeight - gridTop - 10;
+          const colMatch = grid.style.gridTemplateColumns.match(/repeat\((\d+)/);
+          const c = colMatch ? parseInt(colMatch[1]) : 6;
+          const r = Math.ceil(grid.children.length / c);
+          if (r >= 1) {
+            const newH = Math.min(300, Math.max(60, Math.floor((avail - 8*(r-1)) / r)));
+            grid.style.gridTemplateRows = `repeat(${r},${newH}px)`;
+            const label = document.getElementById('tv-cardh-label');
+            if (label) label.textContent = newH + 'px';
+          }
+        }
+      }
+      // Apply zoom/stat settings เสมอ ไม่ว่าจะ auto หรือ manual
       applyTvSettings();
     }, 100);
   }
