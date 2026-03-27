@@ -376,7 +376,75 @@
     letter-spacing: 0.5px;
   }
 
-  /* TV scrollbar styling */
+  /* ========== TV MODE 2 ========== */
+  body.tv-mode2 .topbar { display: none !important; }
+  body.tv-mode2 .sidebar { display: none !important; }
+  body.tv-mode2 .tv-filter-bar { display: none !important; }
+  body.tv-mode2 .dash-filter-bar { display: none !important; }
+  body.tv-mode2 .main { margin-left: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body.tv-mode2 .content {
+    flex: 1;
+    padding: 6px 8px 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+  body.tv-mode2 .content {
+    flex: 1;
+    padding: 8px 10px 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+  body.tv-mode2 .stats-row { display: none !important; }
+  body.tv-mode2 .dash-filter-bar { display: none !important; }
+  body.tv-mode2 .mobile-dept-filter { display: none !important; }
+  .tv2-bar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    height: 38px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  body.tv-mode2 .tv2-bar { display: flex; }
+  .tv2-island {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 10px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .tv2-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tv2-chip:hover { background: var(--bg); color: var(--text); }
+  .tv2-chip.active { background: var(--bg); border-color: var(--border); color: var(--text); }
+  .tv2-chip .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .tv2-clock { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+  .tv2-date { font-size: 10px; color: var(--muted); }
+  .tv2-divider { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
   body.tv-mode ::-webkit-scrollbar { width: 4px; height: 4px; }
   body.tv-mode ::-webkit-scrollbar-track { background: transparent; }
   body.tv-mode ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -1410,6 +1478,7 @@
   @media (max-width: 768px) {
     #col-toggle-btn { display: none; }
     #tv-mode-btn    { display: none; }
+    #tv2-mode-btn   { display: none; }
     #sidebar-toggle-btn { display: none !important; }
     .sidebar-collapse-tab { display: none !important; }
     .sidebar { transform: translateX(-100%); }
@@ -1547,11 +1616,64 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span id="tv-label">TV Mode</span>
       </button>
+      <button class="topbar-btn" id="tv2-mode-btn" onclick="toggleTvMode2()" title="TV Mode 2 — Minimal" style="border-color:var(--accent2);color:var(--accent2)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="6" y1="10" x2="18" y2="10" stroke-dasharray="2 2"/></svg>
+        <span id="tv2-label">TV 2</span>
+      </button>
     </div>
   </div>
 
   <div class="content" id="main-content">
     <!-- Content rendered by JS -->
+  </div>
+
+  <!-- TV Mode 2 Bottom Bar -->
+  <div class="tv2-bar" id="tv2-bar">
+    <!-- Left island: date, time, countdown -->
+    <div class="tv2-island">
+      <span class="tv2-date" id="tv2-date"></span>
+      <span class="tv2-clock" id="tv2-clock"></span>
+      <div class="tv2-divider"></div>
+      <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="tv2-countdown-val">30</span>s
+      </span>
+    </div>
+
+    <!-- Center island: status + dept chips -->
+    <div class="tv2-island" id="tv2-chips-island" style="flex:1;overflow:hidden;justify-content:center">
+      <div id="tv2-status-chips" style="display:flex;gap:4px;align-items:center"></div>
+      <div id="tv2-dept-chips" style="display:none;gap:4px;align-items:center"></div>
+    </div>
+
+    <!-- Right island: settings + exit -->
+    <div class="tv2-island">
+      <button onclick="toggleTv2Settings()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px" title="ตั้งค่า">⚙️</button>
+      <div class="tv2-divider"></div>
+      <button onclick="toggleTvMode2()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;font-family:inherit;padding:0 2px;font-weight:600" title="ออก">✕ ออก</button>
+    </div>
+
+    <!-- Settings panel (popup upward) -->
+    <div id="tv2-settings-panel" style="display:none;position:absolute;bottom:42px;right:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:200px;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,0.4)">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px">⚙️ TV2 Settings</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text)">ความสูงการ์ด</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="adjustTvCardH(-5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+          <span id="tv2-cardh-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">auto</span>
+          <button onclick="adjustTvCardH(5)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--text)">ซูมการ์ด</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="adjustTvCardZoom(-0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">−</button>
+          <span id="tv2-cardzoom-label" style="font-size:11px;color:var(--accent2);min-width:36px;text-align:center">100%</span>
+          <button onclick="adjustTvCardZoom(0.1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700">+</button>
+        </div>
+      </div>
+      <button onclick="localStorage.removeItem('tvCardH');localStorage.removeItem('tvCardZoom');renderPage();" style="width:100%;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:4px;cursor:pointer">↺ Reset (Auto)</button>
+    </div>
   </div>
 </main>
 
@@ -2140,8 +2262,8 @@ function renderPage() {
   const addBtn = document.getElementById('topbar-add-btn');
   const colBtn = document.getElementById('col-toggle-btn');
   const isMachinesPage = currentPage === 'machines';
-  if (addBtn) addBtn.style.display = isMachinesPage || tvMode ? 'none' : '';
-  if (colBtn) colBtn.style.display = isMachinesPage || tvMode ? 'none' : '';
+  if (addBtn) addBtn.style.display = isMachinesPage || tvMode || tvMode2 ? 'none' : '';
+  if (colBtn) colBtn.style.display = isMachinesPage || tvMode || tvMode2 ? 'none' : '';
   if (currentPage === 'dashboard') renderDashboard(el);
   else if (currentPage === 'history') renderHistory(el);
   else if (currentPage === 'machines') renderMachines(el);
@@ -2149,8 +2271,13 @@ function renderPage() {
   applyColVisibility();
   updateClearDemoBtn();
 
+  // TV2 bar update
+  if (tvMode2) {
+    setTimeout(() => { renderTv2Bar(); applyTvSettings(); }, 50);
+  }
+
   // TV mode post-render
-  if (tvMode) {
+  if (tvMode || tvMode2) {
     setTimeout(() => {
       // Auto-calc cardH เมื่อไม่มี manual override
       if (!localStorage.getItem('tvCardH')) {
@@ -2346,7 +2473,7 @@ function renderDashJobs() {
   const foundEl = document.getElementById('dash-found-count');
   if (foundEl) foundEl.textContent = (q || dashDeptFilter !== 'all') ? `พบ ${sorted.length} งาน` : '';
 
-  el.innerHTML = tvMode ? renderTvCards(sorted) :
+  el.innerHTML = (tvMode || tvMode2) ? renderTvCards(sorted) :
     (dashView === 'card' ? renderCards(sorted, true, null, !isMobile()) : renderTable(sorted, true));
 }
 
@@ -3820,11 +3947,145 @@ function updateLastUpdated() {
 
 // ========== TV MODE ==========
 let tvMode = false;
+let tvMode2 = false; // TV Mode 2 — minimal bottom bar
 let tvClockInterval = null;
 let tvRefreshInterval = null;
 let tvPageInterval = null;
 let tvFilter = 'all';
 let tvDeptFilter = 'all';
+let tv2DeptExpanded = false; // แสดง dept chips ใน tv2
+
+// ========== TV MODE 2 ==========
+let tv2ClockInterval = null;
+let tv2RefreshInterval = null;
+let tv2CountdownInterval = null;
+let tv2CountdownVal = 30;
+
+function toggleTvMode2() {
+  tvMode2 = !tvMode2;
+  document.body.classList.toggle('tv-mode2', tvMode2);
+  document.getElementById('tv2-label').textContent = tvMode2 ? 'TV 2' : 'TV 2';
+
+  if (tvMode2) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    tvFilter = 'all';
+    tvDeptFilter = 'all';
+    tv2DeptExpanded = false;
+    navigate('dashboard');
+    // start clock
+    tv2ClockInterval = setInterval(updateTv2Clock, 1000);
+    updateTv2Clock();
+    // start countdown + refresh
+    tv2CountdownVal = 30;
+    tv2CountdownInterval = setInterval(() => {
+      tv2CountdownVal = Math.max(0, tv2CountdownVal - 1);
+      const el = document.getElementById('tv2-countdown-val');
+      if (el) el.textContent = tv2CountdownVal;
+      if (tv2CountdownVal === 0) {
+        syncFromSheet();
+        tv2CountdownVal = 30;
+      }
+    }, 1000);
+    setTimeout(() => { applyTvSettings(); renderTv2Bar(); }, 100);
+  } else {
+    if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    if (tv2ClockInterval) { clearInterval(tv2ClockInterval); tv2ClockInterval = null; }
+    if (tv2CountdownInterval) { clearInterval(tv2CountdownInterval); tv2CountdownInterval = null; }
+    const content = document.querySelector('.main');
+    if (content) content.style.zoom = 1;
+    renderPage();
+  }
+}
+
+function updateTv2Clock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mo = String(now.getMonth()+1).padStart(2,'0');
+  const clk = document.getElementById('tv2-clock');
+  const dt = document.getElementById('tv2-date');
+  if (clk) clk.textContent = `${hh}:${mm}:${ss}`;
+  if (dt) dt.textContent = `${dd}/${mo}`;
+}
+
+function renderTv2Bar() {
+  const active = jobs.filter(j => j.status !== 'done');
+  const running = active.filter(j => j.status === 'active').length;
+  const stopped = active.filter(j => j.status === 'stop').length;
+  const overdue = active.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0).length;
+  const warn = active.filter(j => { const d = daysLeft(j.due); return d !== null && d >= 0 && d <= 7; }).length;
+
+  // Status chips
+  const statusEl = document.getElementById('tv2-status-chips');
+  if (statusEl) {
+    const chips = [
+      { f: 'all',     color: 'var(--accent)',  label: 'Active',     val: active.length },
+      { f: 'active',  color: 'var(--green)',   label: 'In Process', val: running },
+      { f: 'hold',    color: 'var(--yellow)',  label: 'On Hold',    val: stopped },
+      { f: 'overdue', color: 'var(--red)',     label: 'Over Due',   val: overdue },
+      { f: 'warn',    color: 'var(--yellow)',  label: 'Week',       val: warn },
+    ];
+    statusEl.innerHTML = chips.map(c => `
+      <button class="tv2-chip ${tvFilter===c.f&&!tv2DeptExpanded?'active':''}" onclick="setTv2Filter('${c.f}')">
+        <span class="dot" style="background:${c.color}"></span>${c.label} ${c.val}
+      </button>`).join('') +
+      `<button class="tv2-chip ${tv2DeptExpanded?'active':''}" onclick="toggleTv2Dept()" style="margin-left:4px">
+        แผนก ${tv2DeptExpanded?'▲':'▼'}
+      </button>`;
+  }
+
+  // Dept chips
+  const deptEl = document.getElementById('tv2-dept-chips');
+  if (deptEl) {
+    deptEl.innerHTML = `<button class="tv2-chip ${tvDeptFilter==='all'?'active':''}" onclick="setTv2Dept('all')">← ทั้งหมด</button>` +
+      Object.entries(DEPT_LABELS).map(([k, label]) => {
+        const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === k);
+        const cnt = active.filter(j => j.dept === deptName).length;
+        if (cnt === 0) return '';
+        return `<button class="tv2-chip dept-${k} ${tvDeptFilter===k?'active':''}" onclick="setTv2Dept('${k}')">${label} ${cnt}</button>`;
+      }).join('');
+    deptEl.style.display = tv2DeptExpanded ? 'flex' : 'none';
+    statusEl.style.display = tv2DeptExpanded ? 'none' : 'flex';
+  }
+
+  // Update settings labels
+  const cardH = localStorage.getItem('tvCardH');
+  const lh = document.getElementById('tv2-cardh-label');
+  if (lh) lh.textContent = cardH ? cardH + 'px' : 'auto';
+  const lz = document.getElementById('tv2-cardzoom-label');
+  if (lz) lz.textContent = Math.round(parseFloat(localStorage.getItem('tvCardZoom')||'1')*100) + '%';
+}
+
+function setTv2Filter(f) {
+  if (f === 'warn') {
+    // warn ไม่ใช่ tvFilter แต่เป็น dept filter พิเศษ — กรองด้วย daysLeft
+    tvFilter = 'warn';
+  } else {
+    tvFilter = f;
+  }
+  tv2DeptExpanded = false;
+  renderPage();
+}
+
+function setTv2Dept(k) {
+  tvDeptFilter = k;
+  tv2DeptExpanded = false;
+  renderPage();
+}
+
+function toggleTv2Dept() {
+  tv2DeptExpanded = !tv2DeptExpanded;
+  renderTv2Bar();
+}
+
+function toggleTv2Settings() {
+  const p = document.getElementById('tv2-settings-panel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
 
 function toggleTvMode() {
   tvMode = !tvMode;
@@ -3998,6 +4259,7 @@ function renderTvCards(active) {
   if (tvFilter === 'active')  list = list.filter(j => j.status === 'active');
   if (tvFilter === 'hold')    list = list.filter(j => j.status === 'stop');
   if (tvFilter === 'overdue') list = list.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0);
+  if (tvFilter === 'warn')    list = list.filter(j => { const d = daysLeft(j.due); return d !== null && d >= 0 && d <= 7; });
   if (tvDeptFilter !== 'all') {
     const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === tvDeptFilter);
     list = list.filter(j => j.dept === deptName);
@@ -4152,6 +4414,7 @@ document.addEventListener('keydown', () => { if (tvMode) showTvActivity(); });
 // Exit TV mode when pressing Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && tvMode) toggleTvMode();
+  if (e.key === 'Escape' && tvMode2) toggleTvMode2();
 });
 
 document.addEventListener('fullscreenchange', () => {
