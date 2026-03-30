@@ -3983,6 +3983,8 @@ function toggleTvMode2() {
     tvDeptFilter = 'all';
     tv2DeptExpanded = false;
     navigate('dashboard');
+    // หยุด auto-refresh ปกติ เพราะ tv2Countdown จัดการเอง
+    if (_autoRefreshInterval) { clearInterval(_autoRefreshInterval); _autoRefreshInterval = null; }
     // start clock
     tv2ClockInterval = setInterval(updateTv2Clock, 1000);
     updateTv2Clock();
@@ -4004,6 +4006,7 @@ function toggleTvMode2() {
     if (tv2CountdownInterval) { clearInterval(tv2CountdownInterval); tv2CountdownInterval = null; }
     const content = document.querySelector('.main');
     if (content) content.style.zoom = 1;
+    startAutoRefresh();
     renderPage();
   }
 }
