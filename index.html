@@ -4187,10 +4187,10 @@ function toggleTvSettings() {
 
 function adjustTvCardH(delta) {
   const cur = parseInt(localStorage.getItem('tvCardH') || '120');
-  const next = Math.min(300, Math.max(60, cur + delta));
+  const next = Math.min(300, Math.max(40, cur + delta));
   localStorage.setItem('tvCardH', next);
-  const label = document.getElementById('tv-cardh-label');
-  if (label) label.textContent = next + 'px';
+  // อัปเดต label ทุก instance
+  document.querySelectorAll('#tv-cardh-label, #tv2-cardh-label').forEach(el => el.textContent = next + 'px');
   // อัปเดต grid ทันที
   const grid = document.getElementById('tv-grid-main');
   if (grid) {
@@ -4202,25 +4202,20 @@ function adjustTvCardH(delta) {
 
 function adjustTvCardZoom(delta) {
   const cur = parseFloat(localStorage.getItem('tvCardZoom') || '1');
-  const next = Math.min(1.5, Math.max(0.5, Math.round((cur + delta) * 10) / 10));
+  const next = Math.min(2.0, Math.max(0.2, Math.round((cur + delta) * 10) / 10));
   localStorage.setItem('tvCardZoom', next);
-  const label = document.getElementById('tv-cardzoom-label');
-  if (label) label.textContent = Math.round(next * 100) + '%';
-  const lz2 = document.getElementById('tv2-cardzoom-label');
-  if (lz2) lz2.textContent = Math.round(next * 100) + '%';
+  // อัปเดต label ทุก instance
+  document.querySelectorAll('#tv-cardzoom-label, #tv2-cardzoom-label').forEach(el => el.textContent = Math.round(next * 100) + '%');
   document.documentElement.style.setProperty('--tv-card-zoom', next);
 }
 
 function resetTvCardH() {
   localStorage.removeItem('tvCardH');
-  const label = document.getElementById('tv-cardh-label');
-  if (label) label.textContent = '120px';
-  const grid = document.getElementById('tv-grid-main');
-  if (grid) {
-    const cols = parseInt(grid.style.gridTemplateColumns.match(/repeat\((\d+)/)?.[1] || 6);
-    const rows = Math.ceil(grid.children.length / cols);
-    grid.style.gridTemplateRows = `repeat(${rows},120px)`;
-  }
+  localStorage.removeItem('tvCardZoom');
+  document.querySelectorAll('#tv-cardh-label, #tv2-cardh-label').forEach(el => el.textContent = 'auto');
+  document.querySelectorAll('#tv-cardzoom-label, #tv2-cardzoom-label').forEach(el => el.textContent = '100%');
+  document.documentElement.style.setProperty('--tv-card-zoom', 1);
+  renderPage();
 }
 
 function adjustTvStatH(delta) {
