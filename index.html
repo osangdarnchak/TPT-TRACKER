@@ -2651,7 +2651,7 @@ function updateFilterBtn() {
   if (isActive) {
     let text = dashFilterCustomer;
     if (dashFilterProject) text += ' · ' + dashFilterProject;
-    label.textContent = '🔽 ' + text;
+    label.innerHTML = '<span style="color:var(--red);font-weight:700">✕</span> ' + text;
     btn.style.borderColor = 'var(--accent)';
     btn.style.color = 'var(--accent)';
     btn.style.background = 'rgba(59,130,246,0.08)';
