@@ -2578,21 +2578,32 @@ function renderFilterList() {
   const active = jobs.filter(j => j.status !== 'done');
 
   if (_filterStep === 'customer') {
-    // รวม customer ทั้งหมด + นับงาน
+    // รวม customer ทั้งหมด + นับงาน + ดึง prefix 2 ตัวแรกจาก projectNo
     const map = {};
+    const prefixMap = {}; // customer -> prefix
     active.forEach(j => {
       const c = j.customer || '—';
       map[c] = (map[c] || 0) + 1;
+      if (!prefixMap[c] && j.projectNo && j.projectNo.length >= 2) {
+        prefixMap[c] = j.projectNo.substring(0, 2);
+      }
     });
     let entries = Object.entries(map).sort((a,b) => b[1]-a[1]);
-    if (q) entries = entries.filter(([c]) => c.toLowerCase().includes(q));
-    el.innerHTML = entries.map(([c, cnt]) => `
+    if (q) entries = entries.filter(([c]) => {
+      const label = (prefixMap[c] ? prefixMap[c] + '-' : '') + c;
+      return label.toLowerCase().includes(q) || c.toLowerCase().includes(q);
+    });
+    el.innerHTML = entries.map(([c, cnt]) => {
+      const prefix = prefixMap[c] ? prefixMap[c] + '-' : '';
+      const displayLabel = prefix + c;
+      return `
       <button onclick="selectFilterCustomer('${c.replace(/'/g,"\\'")}') "
         style="padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap"
         onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">
-        ${c} <span style="opacity:0.6;font-weight:400">(${cnt})</span>
-      </button>`).join('');
+        ${displayLabel} <span style="opacity:0.6;font-weight:400">(${cnt})</span>
+      </button>`;
+    }).join('');
   } else {
     // step project — กรองตาม customer ที่เลือก
     const filtered = active.filter(j => (j.customer || '—') === dashFilterCustomer);
@@ -2793,7 +2804,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
       <div class="jc-actions">
         <span style="font-size:10px;color:var(--muted);align-self:center">⏱ ${j.updatedAt ? timeAgo(j.updatedAt) : 'ยังไม่มีการอัปเดต'}</span>
         <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎ อัปเดต</button>
-        <button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>
+        ${deptKey(j.dept || 'N/A') === 'QC' ? `<button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>` : ''}
       </div>
     </div>`;
   }).join('') + `</div>`;
@@ -2866,7 +2877,7 @@ function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
       <td class="tv-hide cv-action">
         <div style="display:flex;gap:5px;flex-wrap:nowrap">
           <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎</button>
-          <button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>
+          ${deptKey(j.dept || 'N/A') === 'QC' ? `<button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>` : ''}
         </div>
       </td>
     </tr>`;
