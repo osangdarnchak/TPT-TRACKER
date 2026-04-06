@@ -673,6 +673,7 @@
   }
   .dash-stats { grid-template-columns: repeat(6, 1fr); }
   .mobile-dept-filter { display: none; }
+  .desktop-only { display: flex; }
   @media (max-width: 768px) {
     .dash-stats { grid-template-columns: repeat(5, 1fr); gap: 6px; }
     .dash-stats .stat-card:last-child { display: none; }
@@ -682,6 +683,7 @@
     .dash-stats .stat-card .sub { font-size: 9px; }
     .mobile-dept-filter { display: flex !important; flex-wrap: wrap; gap: 4px; width: 100%; }
     .sidebar-collapse-tab { display: none !important; }
+    .desktop-only { display: none !important; }
     .mt-machines {
       display: grid !important;
       grid-template-columns: repeat(2, 1fr);
@@ -2449,25 +2451,25 @@ function renderDashboard(el) {
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
-      <button class="btn btn-sm ${dashSort==='due'?'btn-primary':''}" onclick="setDashSort('due')">📅 Due Date</button>
-      <button class="btn btn-sm ${dashSort==='added'?'btn-primary':''}" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
+      <button class="btn btn-sm dash-sort-btn ${dashSort==='due'?'btn-primary':''}" data-sort="due" onclick="setDashSort('due')">📅 Due Date</button>
+      <button class="btn btn-sm dash-sort-btn ${dashSort==='added'?'btn-primary':''}" data-sort="added" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
       ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
       <span id="dash-found-count" style="font-size:11px;color:var(--accent)"></span>
-      <div style="margin-left:auto;display:flex;gap:2px">
+      <div class="desktop-only" style="margin-left:auto;display:flex;gap:2px">
         <button onclick="setDashView('table')" title="Table view" style="background:${dashView==='table'?'var(--bg3)':'none'};border:1px solid ${dashView==='table'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='table'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">☰</button>
         <button onclick="setDashView('card')" title="Card view" style="background:${dashView==='card'?'var(--bg3)':'none'};border:1px solid ${dashView==='card'?'var(--border)':'transparent'};border-radius:5px;padding:4px 8px;cursor:pointer;color:${dashView==='card'?'var(--text)':'var(--muted)'};font-size:14px;transition:all 0.15s">⊞</button>
       </div>
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
       <div class="mobile-dept-filter">
-        <button class="btn btn-sm" style="font-size:10px;padding:2px 8px;opacity:${dashDeptFilter==='all'?'1':'0.6'};${dashDeptFilter==='all'?'outline:2px solid currentColor;outline-offset:1px':''}" onclick="setDashDeptFilter('all')">ทั้งหมด</button>
+        <button class="btn btn-sm mobile-dept-btn" data-dept="all" style="font-size:10px;padding:2px 8px;opacity:${dashDeptFilter==='all'?'1':'0.6'};${dashDeptFilter==='all'?'outline:2px solid currentColor;outline-offset:1px':''}" onclick="setDashDeptFilter('all')">ทั้งหมด</button>
         ${DEPTS.map(d => {
           const k = DEPT_KEYS[d];
           const cnt = active.filter(j => j.dept === d).length;
           if (cnt === 0) return '';
           const isAct = dashDeptFilter === k;
           const sty = 'font-size:10px;padding:2px 8px;opacity:' + (isAct?'1':'0.6') + ';' + (isAct?'outline:2px solid currentColor;outline-offset:1px':'');
-          return '<button class="btn btn-sm dept-' + k + '" style="' + sty + '" onclick="setDashDeptFilter(\'' + k + '\')">' + DEPT_LABELS[k] + ' <span style="opacity:0.7">(' + cnt + ')</span></button>';
+          return '<button class="btn btn-sm dept-' + k + ' mobile-dept-btn" data-dept="' + k + '" style="' + sty + '" onclick="setDashDeptFilter(\'' + k + '\')">' + DEPT_LABELS[k] + ' <span class="dept-cnt" style="opacity:0.7">(' + cnt + ')</span></button>';
         }).join('')}
       </div>
     </div>
@@ -2530,6 +2532,31 @@ function renderDashJobs() {
   const isFiltered = q || dashDeptFilter !== 'all' || dashStatusFilter !== 'all' || dashFilterCustomer || dashFilterProject;
   const foundEl = document.getElementById('dash-found-count');
   if (foundEl) foundEl.textContent = isFiltered ? `พบ ${sorted.length} งาน` : '';
+  // อัปเดต sort button highlight
+  document.querySelectorAll('.dash-sort-btn').forEach(btn => {
+    const isActive = btn.dataset.sort === dashSort;
+    btn.classList.toggle('btn-primary', isActive);
+  });
+
+  // อัปเดต dept filter buttons ให้นับจาก sorted (ผ่าน status filter แล้ว)
+  document.querySelectorAll('.mobile-dept-btn').forEach(btn => {
+    const k = btn.dataset.dept;
+    const deptName = Object.keys(DEPT_KEYS).find(d => DEPT_KEYS[d] === k);
+    // นับจาก active ที่ผ่าน status filter แล้ว (ก่อน dept filter)
+    let base = [...active];
+    if (dashStatusFilter === 'active')  base = base.filter(j => j.status === 'active');
+    if (dashStatusFilter === 'stop')    base = base.filter(j => j.status === 'stop');
+    if (dashStatusFilter === 'overdue') base = base.filter(j => daysLeft(j.due) !== null && daysLeft(j.due) < 0);
+    if (dashStatusFilter === 'warn')    base = base.filter(j => { const d = daysLeft(j.due); return d !== null && d >= 0 && d <= 7; });
+    const cnt = k === 'all' ? base.length : base.filter(j => j.dept === deptName).length;
+    const countEl = btn.querySelector('.dept-cnt');
+    if (countEl) countEl.textContent = '(' + cnt + ')';
+    const isActive = dashDeptFilter === k;
+    btn.style.opacity = isActive ? '1' : '0.6';
+    btn.style.outline = isActive ? '2px solid currentColor' : 'none';
+    btn.style.outlineOffset = '1px';
+  });
+
   // อัปเดต stat card highlight
   document.querySelectorAll('.stat-card[data-filter]').forEach(el => {
     el.style.outline = el.dataset.filter === dashStatusFilter ? '2px solid var(--accent)' : 'none';
