@@ -3630,6 +3630,20 @@ function selectProc(idx, chip) {
   editProcIdx = idx;
   document.querySelectorAll('#process-select-list .proc-chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
+  // ถ้า process ที่เลือกคือ QC → เปลี่ยน dept เป็น QC อัตโนมัติ
+  const procName = (_editProcs || [])[idx] || '';
+  if (procName.trim().toLowerCase() === 'qc') {
+    editDept = 'QC';
+    // อัปเดต dept button visual
+    document.querySelectorAll('#dept-select-wrap .dept-btn').forEach(b => b.className = 'dept-btn');
+    const qcBtn = document.querySelector('#dept-select-wrap .dept-btn.dept-QC, #dept-select-wrap .btn-QC');
+    // หา dept button ที่ตรงกับ QC
+    document.querySelectorAll('#dept-select-wrap .dept-btn').forEach(b => {
+      if (b.textContent.trim() === 'QC') {
+        b.className = 'dept-btn sel-QC';
+      }
+    });
+  }
 }
 
 function timeAgo(iso) {
@@ -3680,6 +3694,13 @@ function quickProcClick(id, idx) {
   const j = jobs.find(x => x.id === id);
   if (!j) return;
   j.currentProc = (j.currentProc === idx) ? null : idx;
+  // ถ้า process ที่เลือกคือ QC → เปลี่ยน dept เป็น QC อัตโนมัติ
+  if (j.currentProc !== null) {
+    const procName = (j.processes || [])[idx] || '';
+    if (procName.trim().toLowerCase() === 'qc') {
+      j.dept = 'QC';
+    }
+  }
   stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
