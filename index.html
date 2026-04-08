@@ -1502,7 +1502,7 @@
     #sidebar-toggle-btn { display: none !important; }
     .sidebar-collapse-tab { display: none !important; }
     .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
+    .sidebar.open { transform: translateX(0) !important; }
     .main { margin-left: 0; overflow-x: hidden; }
     .content { padding: 12px; overflow-x: hidden; }
     .topbar { padding: 0 14px; height: 52px; }
@@ -2327,7 +2327,7 @@ function renderPage() {
   const addBtn = document.getElementById('topbar-add-btn');
   const colBtn = document.getElementById('col-toggle-btn');
   const isMachinesPage = currentPage === 'machines';
-  if (addBtn) addBtn.style.display = isMachinesPage || tvMode || tvMode2 ? 'none' : '';
+  if (addBtn) addBtn.style.display = (isMachinesPage || tvMode || tvMode2 || !isAdmin) ? 'none' : '';
   if (colBtn) colBtn.style.display = isMachinesPage || tvMode || tvMode2 ? 'none' : '';
   if (currentPage === 'dashboard') renderDashboard(el);
   else if (currentPage === 'history') renderHistory(el);
@@ -4381,7 +4381,7 @@ function toggleTvMode() {
   tvMode = !tvMode;
   document.body.classList.toggle('tv-mode', tvMode);
   document.getElementById('tv-label').textContent = tvMode ? 'ออก' : 'TV Mode';
-  document.getElementById('topbar-add-btn').style.display = tvMode ? 'none' : '';
+  document.getElementById('topbar-add-btn').style.display = (tvMode || !isAdmin) ? 'none' : '';
 
   if (tvMode) {
     if (document.documentElement.requestFullscreen) {
