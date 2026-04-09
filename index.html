@@ -841,6 +841,7 @@
   .dept-QC { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
   .dept-Other { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
   .dept-NA { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .dept-REPEAT { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
   .dept-done { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
 
   /* DUE DATE */
@@ -1859,7 +1860,7 @@
       <!-- Tabs -->
       <div style="display:flex;gap:0">
         <button class="edit-tab active" id="edit-tab-0" onclick="switchEditTab(0)">อัปเดต</button>
-        <button class="edit-tab" id="edit-tab-1" onclick="switchEditTab(1)">ข้อมูลงาน</button>
+        ${isAdmin ? `<button class="edit-tab" id="edit-tab-1" onclick="switchEditTab(1)">ข้อมูลงาน</button>` : ''}
       </div>
     </div>
 
@@ -2244,9 +2245,9 @@ let _mcEditAreaIdx = null;
 let _mcEditMcIdx = null;
 let _mcAddAreaIdx = null;
 
-const DEPTS = ['MFG-1.1.', 'MFG-1.2.', 'QC', 'Other', 'N/A'];
-const DEPT_KEYS = { 'MFG-1.1.': 'MFG11', 'MFG-1.2.': 'MFG12', 'QC': 'QC', 'Other': 'Other', 'N/A': 'NA' };
-const DEPT_LABELS = { 'MFG11': 'MC', 'MFG12': 'CL&ML', 'QC': 'QC', 'Other': 'Other', 'NA': 'N/A' };
+const DEPTS = ['MFG-1.1.', 'MFG-1.2.', 'QC', 'Other', 'REPEAT', 'N/A'];
+const DEPT_KEYS = { 'MFG-1.1.': 'MFG11', 'MFG-1.2.': 'MFG12', 'QC': 'QC', 'Other': 'Other', 'REPEAT': 'REPEAT', 'N/A': 'NA' };
+const DEPT_LABELS = { 'MFG11': 'MC', 'MFG12': 'CL&ML', 'QC': 'QC', 'Other': 'Other', 'REPEAT': 'REPEAT', 'NA': 'N/A' };
 
 function save() {
   localStorage.setItem('jobs', JSON.stringify(jobs));
@@ -2798,7 +2799,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
     const procs = j.processes || [];
     const cur = j.currentProc;
     const chips = procs.map((p, i) =>
-      `<span class="proc-chip ${cur === i ? 'active' : ''}" onclick="quickProcClick('${j.id}',${i})">${p}</span>`
+      `<span class="proc-chip ${cur === i ? 'active' : ''}">${p}</span>`
     ).join('');
     const overdue = days !== null && days < 0;
     const cardClass = j.status === 'stop' ? 'jc-hold' : overdue ? 'jc-over' : 'jc-active';
@@ -2818,13 +2819,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
         </div>
         <div class="jc-right">
           <div class="dept-dropdown-wrap">
-            <div onclick="toggleDeptDD('${j.id}',event)">${deptBadge(j.dept || 'N/A')}</div>
-            <div class="dept-dropdown" id="deptdd-${j.id}">
-              ${DEPTS.map(d => {
-                const k = deptKey(d);
-                return `<div class="dept-dd-item dept-${k}" onclick="quickSetDept('${j.id}','${d}',event)">${DEPT_LABELS[k]||d}</div>`;
-              }).join('')}
-            </div>
+            ${deptBadge(j.dept || 'N/A')}
           </div>
           <span class="jc-qty-badge">×${j.qty || '—'}</span>
         </div>
@@ -2846,12 +2841,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
 
       <div class="jc-row">
         <span class="jc-label">MC</span>
-        <div class="mc-dd-wrap">
-          <div class="${j.machine ? 'mc-dd-trigger' : 'mc-dd-trigger no-mc'}" onclick="toggleMcDD('${j.id}',event)">
-            ${j.machine || '+ MC'}
-          </div>
-          <div class="mc-dropdown" id="mcdd-${j.id}"></div>
-        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${j.machine?'var(--text)':'var(--muted)'}">${j.machine || '—'}</span>
       </div>
 
       <div class="jc-actions">
@@ -2903,15 +2893,7 @@ function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
         <div style="font-family:'IBM Plex Mono',monospace;font-size:11px">${formatDate(j.due)}</div>
       </td>
       <td class="col-dept cv-dept">
-        <div class="dept-dropdown-wrap">
-          <div onclick="toggleDeptDD('${j.id}',event)">${deptBadge(j.dept || 'N/A')}</div>
-          <div class="dept-dropdown" id="deptdd-${j.id}">
-            ${DEPTS.map(d => {
-              const k = deptKey(d);
-              return `<div class="dept-dd-item dept-${k}" onclick="quickSetDept('${j.id}','${d}',event)">${DEPT_LABELS[k]||d}</div>`;
-            }).join('')}
-          </div>
-        </div>
+        ${deptBadge(j.dept || 'N/A')}
       </td>
       <td class="col-proc cv-proc">
         <div class="proc-nav">${procNavHtml}</div>
@@ -2919,13 +2901,8 @@ function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
       <td class="col-status cv-status" style="text-align:center">
         ${statusBadge(j.status || 'active', j.id)}
       </td>
-      <td class="col-mc cv-mc" style="text-align:center">
-        <div class="mc-dd-wrap">
-          <div class="${j.machine ? 'mc-dd-trigger' : 'mc-dd-trigger no-mc'}" onclick="toggleMcDD('${j.id}',event)">
-            ${j.machine || '+ MC'}
-          </div>
-          <div class="mc-dropdown" id="mcdd-${j.id}"></div>
-        </div>
+      <td class="col-mc cv-mc" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">
+        ${j.machine || '—'}
       </td>
       <td class="tv-hide cv-action">
         <div style="display:flex;gap:5px;flex-wrap:nowrap">
@@ -4322,7 +4299,7 @@ function renderTv2Bar() {
       { f: 'active',  color: 'var(--green)',   label: 'In Process', val: running },
       { f: 'hold',    color: 'var(--yellow)',  label: 'On Hold',    val: stopped },
       { f: 'overdue', color: 'var(--red)',     label: 'Over Due',   val: overdue },
-      { f: 'warn',    color: 'var(--yellow)',  label: 'Week',       val: warn },
+      { f: 'warn',    color: 'var(--yellow)',  label: '≤ 7 Days',   val: warn },
     ];
     statusEl.innerHTML = chips.map(c => `
       <button class="tv2-chip ${tvFilter===c.f&&!tv2DeptExpanded?'active':''}" onclick="setTv2Filter('${c.f}')">
