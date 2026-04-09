@@ -1882,8 +1882,7 @@
       <!-- Machine -->
       <div class="form-group" style="margin-bottom:0">
         <label>Machine No.</label>
-        <input type="text" id="e-machine" placeholder="CL-01" list="machine-datalist" autocomplete="off" style="margin-top:6px">
-        <datalist id="machine-datalist"></datalist>
+        <div id="machine-chip-picker" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
       </div>
     </div>
 
@@ -3522,6 +3521,74 @@ function toggleProcEditor() {
   if (!isOpen) renderProcEditList();
 }
 
+let _selectedMachine = '';
+
+function renderMachineChipPicker(currentMachine) {
+  _selectedMachine = currentMachine;
+  const el = document.getElementById('machine-chip-picker');
+  if (!el) return;
+  if (!machineAreas || machineAreas.length === 0) {
+    el.innerHTML = '<span style="font-size:12px;color:var(--muted)">ยังไม่มีข้อมูลเครื่องจักร</span>';
+    return;
+  }
+  el.innerHTML = machineAreas.map((area, ai) => `
+    <div>
+      <button onclick="toggleMachineSection(${ai})"
+        style="width:100%;text-align:left;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center">
+        <span>${area.name}</span>
+        <span id="mc-sec-arrow-${ai}" style="font-size:10px;color:var(--muted)">▶</span>
+      </button>
+      <div id="mc-sec-chips-${ai}" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 4px 4px">
+        <button onclick="selectMachineChip('',${ai})"
+          style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:${!currentMachine?'var(--accent)':'var(--bg3)'};color:${!currentMachine?'#fff':'var(--muted)'};font-size:11px;cursor:pointer;font-family:inherit"
+          id="mc-chip-none-${ai}">— ไม่ระบุ</button>
+        ${area.machines.map(m => {
+          const sel = _selectedMachine === m.no;
+          const chipId = 'mc-chip-' + m.no.replace(/[^a-zA-Z0-9]/g,'-');
+          return `<button onclick="selectMachineChip('${m.no}',${ai})"
+            style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:${sel?'var(--accent)':'var(--bg3)'};color:${sel?'#fff':'var(--text)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit"
+            id="${chipId}">${m.no}</button>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+  // ถ้ามี machine ที่เลือกอยู่แล้ว ให้ expand section นั้น
+  if (currentMachine) {
+    machineAreas.forEach((area, ai) => {
+      if (area.machines.some(m => m.no === currentMachine)) {
+        toggleMachineSection(ai);
+      }
+    });
+  }
+}
+
+function toggleMachineSection(ai) {
+  const chips = document.getElementById(`mc-sec-chips-${ai}`);
+  const arrow = document.getElementById(`mc-sec-arrow-${ai}`);
+  if (!chips) return;
+  const open = chips.style.display === 'flex';
+  // ปิดทุก section ก่อน
+  if (!open) {
+    machineAreas.forEach((_, i) => {
+      const c = document.getElementById(`mc-sec-chips-${i}`);
+      const a = document.getElementById(`mc-sec-arrow-${i}`);
+      if (c) c.style.display = 'none';
+      if (a) a.textContent = '▶';
+    });
+  }
+  chips.style.display = open ? 'none' : 'flex';
+  if (arrow) arrow.textContent = open ? '▶' : '▼';
+}
+
+function selectMachineChip(no, ai) {
+  _selectedMachine = no;
+  // อัปเดต style ทุก chip ทั้งหมด
+  document.querySelectorAll('#machine-chip-picker button[id^="mc-chip-"]').forEach(btn => {
+    const isSelected = btn.id === (no ? `mc-chip-${no.replace(/[^a-zA-Z0-9]/g,'-')}` : `mc-chip-none-${ai}`);
+    btn.style.background = isSelected ? 'var(--accent)' : 'var(--bg3)';
+    btn.style.color = isSelected ? '#fff' : (btn.id.startsWith('mc-chip-none') ? 'var(--muted)' : 'var(--text)');
+  });
+}
+
 function openEditModal(id) {
   _editJob = jobs.find(x => x.id === id);
   if (!_editJob) return;
@@ -3533,15 +3600,10 @@ function openEditModal(id) {
   const drawing = _editJob.drawing ? ` (${_editJob.drawing})` : '';
   document.getElementById('edit-title').textContent = _editJob.partName || 'อัปเดตสถานะ';
   document.getElementById('edit-sub').textContent = (_editJob.projectNo || '') + drawing + (_editJob.customer ? ' · ' + _editJob.customer : '');
-  document.getElementById('e-machine').value = _editJob.machine || '';
   document.getElementById('e-status').value = _editJob.status === 'stop' ? 'stop' : 'active';
 
-  // Populate machine datalist from all machines
-  const dl = document.getElementById('machine-datalist');
-  if (dl) {
-    const allMachines = machineAreas.flatMap(a => a.machines.map(m => m.no));
-    dl.innerHTML = allMachines.map(no => `<option value="${no}">`).join('');
-  }
+  // Render machine chip picker
+  renderMachineChipPicker(_editJob.machine || '');
 
   // Updated at
   const updEl = document.getElementById('edit-updated-at');
@@ -3679,7 +3741,7 @@ function saveEdit() {
   j.dept = editDept;
   j.processes = [..._editProcs];
   j.currentProc = (editProcIdx !== null && editProcIdx < _editProcs.length) ? editProcIdx : null;
-  j.machine = document.getElementById('e-machine').value.trim();
+  j.machine = _selectedMachine || '';
   j.status = document.getElementById('e-status').value;
   // Always save job info fields (now always visible in tab 1)
   j.date = document.getElementById('ei-date').value;
