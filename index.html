@@ -1860,7 +1860,7 @@
       <!-- Tabs -->
       <div style="display:flex;gap:0">
         <button class="edit-tab active" id="edit-tab-0" onclick="switchEditTab(0)">อัปเดต</button>
-        ${isAdmin ? `<button class="edit-tab" id="edit-tab-1" onclick="switchEditTab(1)">ข้อมูลงาน</button>` : ''}
+        <button class="edit-tab" id="edit-tab-1" onclick="switchEditTab(1)" style="display:none">ข้อมูลงาน</button>
       </div>
     </div>
 
@@ -2846,7 +2846,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
 
       <div class="jc-actions">
         <span style="font-size:10px;color:var(--muted);align-self:center">⏱ ${j.updatedAt ? timeAgo(j.updatedAt) : 'ยังไม่มีการอัปเดต'}</span>
-        ${isAdmin ? `<button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎ อัปเดต</button>` : ''}
+        <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎ อัปเดต</button>
         ${deptKey(j.dept || 'N/A') === 'QC' ? `<button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>` : ''}
       </div>
     </div>`;
@@ -2906,7 +2906,7 @@ function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
       </td>
       <td class="tv-hide cv-action">
         <div style="display:flex;gap:5px;flex-wrap:nowrap">
-          ${isAdmin ? `<button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎</button>` : ''}
+          <button class="btn btn-sm" onclick="openEditModal('${j.id}')">✎</button>
           ${deptKey(j.dept || 'N/A') === 'QC' ? `<button class="btn btn-sm btn-success" onclick="openCompleteModal('${j.id}')">✓ จบ</button>` : ''}
         </div>
       </td>
@@ -3559,6 +3559,10 @@ function openEditModal(id) {
   if (procEd) { procEd.style.display = 'none'; }
   const procBtn = document.getElementById('btn-proc-editor');
   if (procBtn) procBtn.textContent = '✏️ แก้ไขรายการ Process';
+
+  // แสดง tab ข้อมูลงาน เฉพาะ admin
+  const tab1 = document.getElementById('edit-tab-1');
+  if (tab1) tab1.style.display = isAdmin ? 'block' : 'none';
 
   // Reset to tab 0
   switchEditTab(0);
