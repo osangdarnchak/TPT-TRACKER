@@ -3332,17 +3332,20 @@ function renderHistory(el) {
   }
 
   // เรียงตาม completedAt ล่าสุดขึ้นก่อน
-  let filtered = [...history].sort((a, b) => {
-    const da = a.completedAt ? new Date(a.completedAt) : new Date(0);
-    const db = b.completedAt ? new Date(b.completedAt) : new Date(0);
-    return db - da;
-  });
+  const parseCompleted = s => {
+    if (!s) return new Date(0);
+    // รองรับ dd/mm/yyyy HH:MM และ yyyy-mm-dd
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+    if (m) return new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+    return new Date(s);
+  };
+  let filtered = [...history].sort((a, b) => parseCompleted(b.completedAt) - parseCompleted(a.completedAt));
 
   // กรองตามวันที่เสร็จสิ้น
   if (histDateFilter) {
     filtered = filtered.filter(j => {
       if (!j.completedAt) return false;
-      const d = new Date(j.completedAt);
+      const d = parseCompleted(j.completedAt);
       if (isNaN(d)) return false;
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,'0');
@@ -3485,7 +3488,7 @@ function confirmComplete() {
   const j = jobs[idx];
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
-  const completedAtStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const completedAtStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const hJob = { ...j, fg: fg !== '' ? Number(fg) : null, ng: ng !== '' ? Number(ng) : null, status: 'done', completedAt: completedAtStr };
   history.unshift(hJob);
   jobs.splice(idx, 1);
