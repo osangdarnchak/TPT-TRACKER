@@ -2298,7 +2298,7 @@ function navigate(page) {
   const el = document.getElementById('nav-' + page);
   if (el) el.classList.add('active');
   const titles = {
-    'dashboard': ['Dashboard', 'ภาพรวมงานทั้งหมด'],
+    'dashboard': [isAdmin ? 'Dashboard (Admin)' : 'Dashboard', 'ภาพรวมงานทั้งหมด'],
     'MFG11': ['MC', 'งานในแผนก MC'],
     'MFG12': ['CL&ML', 'งานในแผนก CL&ML'],
     'QC': ['QC', 'งานในแผนก QC'],
@@ -2400,6 +2400,12 @@ function renderDashboard(el) {
       const db = b.date ? new Date(b.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
       return dashSortDir === 'desc' ? db - da : da - db;
     });
+  } else if (dashSort === 'updated') {
+    sorted.sort((a, b) => {
+      const da = a.updatedAt ? new Date(a.updatedAt) : new Date(0);
+      const db = b.updatedAt ? new Date(b.updatedAt) : new Date(0);
+      return dashSortDir === 'desc' ? db - da : da - db;
+    });
   }
 
   // Dept filter
@@ -2471,14 +2477,15 @@ function renderDashboard(el) {
         <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">🔍</span>
         <input type="text" id="dash-search" placeholder="ค้นหางาน, Project, Customer..."
           oninput="onDashSearch(this.value)"
-          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
-        <button id="dash-search-clear" onclick="onDashSearch('');document.getElementById('dash-search').value='';document.getElementById('dash-search').focus()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;display:none">✕</button>
+          style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:border-color 0.15s,background 0.15s">
+        <button id="dash-search-clear" onclick="onDashSearch('');document.getElementById('dash-search').value='';document.getElementById('dash-search').focus()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;font-weight:700;padding:0;display:none;line-height:1">✕</button>
       </div>
     </div>
     <div class="dash-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--muted)">เรียงตาม:</span>
-      <button class="btn btn-sm dash-sort-btn ${dashSort==='due'?'btn-primary':''}" data-sort="due" onclick="setDashSort('due')">📅 Due Date</button>
-      <button class="btn btn-sm dash-sort-btn ${dashSort==='added'?'btn-primary':''}" data-sort="added" onclick="setDashSort('added')">🕐 Release Date ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
+      <button class="btn btn-sm dash-sort-btn ${dashSort==='due'?'btn-primary':''}" data-sort="due" onclick="setDashSort('due')">📅 Due ${dashSort==='due'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
+      <button class="btn btn-sm dash-sort-btn ${dashSort==='added'?'btn-primary':''}" data-sort="added" onclick="setDashSort('added')">📦 Release ${dashSort==='added'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
+      <button class="btn btn-sm dash-sort-btn ${dashSort==='updated'?'btn-primary':''}" data-sort="updated" onclick="setDashSort('updated')">🔄 Update ${dashSort==='updated'?(dashSortDir==='desc'?'↓':'↑'):''}</button>
       ${q || dashDeptFilter !== 'all' ? `<span style="font-size:11px;color:var(--accent)">พบ ${sorted.length} งาน</span>` : ''}
       <span id="dash-found-count" style="font-size:11px;color:var(--accent)"></span>
       <div class="desktop-only" style="margin-left:auto;display:flex;gap:2px">
@@ -2524,6 +2531,12 @@ function renderDashJobs() {
     sorted.sort((a, b) => {
       const da = a.date ? new Date(a.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
       const db = b.date ? new Date(b.date.split('/').reverse().map((v,i) => i===2?'20'+v:v).join('-')) : new Date('0000-01-01');
+      return dashSortDir === 'desc' ? db - da : da - db;
+    });
+  } else if (dashSort === 'updated') {
+    sorted.sort((a, b) => {
+      const da = a.updatedAt ? new Date(a.updatedAt) : new Date(0);
+      const db = b.updatedAt ? new Date(b.updatedAt) : new Date(0);
       return dashSortDir === 'desc' ? db - da : da - db;
     });
   }
@@ -2735,6 +2748,11 @@ function setDashStatusFilter(f) {
 
 function onDashSearch(val) {
   dashSearch = val;
+  const inp = document.getElementById('dash-search');
+  if (inp) {
+    inp.style.borderColor = val ? 'var(--accent)' : 'var(--border)';
+    inp.style.background = val ? 'rgba(59,130,246,0.07)' : 'var(--bg3)';
+  }
   renderDashJobs();
 }
 
@@ -2745,7 +2763,7 @@ function setDashView(v) {
 }
 
 function setDashSort(mode) {
-  if (mode === 'added' && dashSort === 'added') {
+  if (dashSort === mode) {
     dashSortDir = dashSortDir === 'desc' ? 'asc' : 'desc';
     localStorage.setItem('dashSortDir', dashSortDir);
   } else {
@@ -3305,9 +3323,7 @@ function confirmAddArea() {
 }
 
 let histSearch = '';
-let histMonthFilter = 'all';
-let histCustomerFilter = 'all';
-let histDeptFilter = 'all';
+let histDateFilter = ''; // yyyy-mm-dd
 
 function renderHistory(el) {
   if (history.length === 0) {
@@ -3315,28 +3331,26 @@ function renderHistory(el) {
     return;
   }
 
-  const months = [...new Set(history.map(j => {
-    if (!j.completedAt) return null;
-    const d = new Date(j.completedAt);
-    if (isNaN(d)) return null;
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  }).filter(Boolean))].sort().reverse();
+  // เรียงตาม completedAt ล่าสุดขึ้นก่อน
+  let filtered = [...history].sort((a, b) => {
+    const da = a.completedAt ? new Date(a.completedAt) : new Date(0);
+    const db = b.completedAt ? new Date(b.completedAt) : new Date(0);
+    return db - da;
+  });
 
-  const customers = [...new Set(history.map(j => j.customer).filter(Boolean))].sort();
-  const depts = [...new Set(history.map(j => j.dept).filter(Boolean))].sort();
-
-  let filtered = [...history];
-  if (histMonthFilter !== 'all') {
+  // กรองตามวันที่เสร็จสิ้น
+  if (histDateFilter) {
     filtered = filtered.filter(j => {
       if (!j.completedAt) return false;
       const d = new Date(j.completedAt);
       if (isNaN(d)) return false;
-      const m = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      return m === histMonthFilter;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `${yyyy}-${mm}-${dd}` === histDateFilter;
     });
   }
-  if (histCustomerFilter !== 'all') filtered = filtered.filter(j => j.customer === histCustomerFilter);
-  if (histDeptFilter !== 'all') filtered = filtered.filter(j => j.dept === histDeptFilter);
+
   if (histSearch.trim()) {
     const q = histSearch.trim().toLowerCase();
     filtered = filtered.filter(j =>
@@ -3347,9 +3361,6 @@ function renderHistory(el) {
     );
   }
 
-  const thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const monthLabel = m => { const [y,mo] = m.split('-'); return `${thMonths[Number(mo)]} ${Number(y)+543}`; };
-
   const filterBar = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="position:relative;flex:1;min-width:180px;max-width:280px">
@@ -3358,18 +3369,13 @@ function renderHistory(el) {
           oninput="onHistSearch(this.value)"
           style="width:100%;padding:6px 10px 6px 30px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
       </div>
-      <select onchange="histMonthFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
-        <option value="all" ${histMonthFilter==='all'?'selected':''}>📅 ทุกเดือน</option>
-        ${months.map(m => `<option value="${m}" ${histMonthFilter===m?'selected':''}>${monthLabel(m)}</option>`).join('')}
-      </select>
-      <select onchange="histCustomerFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
-        <option value="all" ${histCustomerFilter==='all'?'selected':''}>🏭 ทุก Customer</option>
-        ${customers.map(c => `<option value="${c}" ${histCustomerFilter===c?'selected':''}>${c}</option>`).join('')}
-      </select>
-      <select onchange="histDeptFilter=this.value;renderPage()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px">
-        <option value="all" ${histDeptFilter==='all'?'selected':''}>📋 ทุกแผนก</option>
-        ${depts.map(d => { const k = DEPT_KEYS[d]||'NA'; return `<option value="${d}" ${histDeptFilter===d?'selected':''}>${DEPT_LABELS[k]||d}</option>`; }).join('')}
-      </select>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:12px;color:var(--muted);white-space:nowrap">📅 เสร็จสิ้น:</label>
+        <input type="date" id="hist-date-filter" value="${histDateFilter}"
+          onchange="histDateFilter=this.value;renderPage()"
+          style="padding:5px 10px;border-radius:6px;border:1px solid ${histDateFilter?'var(--accent)':'var(--border)'};background:${histDateFilter?'rgba(59,130,246,0.07)':'var(--bg3)'};color:var(--text);font-size:12px">
+        ${histDateFilter ? `<button onclick="histDateFilter='';renderPage()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;font-weight:700;padding:0;line-height:1">✕</button>` : ''}
+      </div>
       <span style="font-size:11px;color:var(--muted)">${filtered.length} / ${history.length} งาน</span>
     </div>`;
 
@@ -3383,7 +3389,7 @@ function renderHistory(el) {
         <div class="hfg">งานดี (FG): <b style="color:var(--green)">${j.fg ?? '—'}</b> &nbsp; งานเสีย (NG): <b style="color:var(--red)">${j.ng ?? '—'}</b></div>
         <div style="font-size:11px;color:var(--muted);margin-top:3px">Release: ${formatDate(j.date)} &nbsp;|&nbsp; Due: ${formatDate(j.due)} &nbsp;|&nbsp; เสร็จสิ้น: ${j.completedAt || '—'}</div>
       </div>
-      <button class="btn btn-sm" onclick="restoreJob('${j.id}')">↩ นำกลับ</button>
+      ${isAdmin ? `<button class="btn btn-sm" onclick="restoreJob('${j.id}')">↩ นำกลับ</button>` : ''}
     </div>
   `).join('');
 
