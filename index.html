@@ -3483,7 +3483,10 @@ function confirmComplete() {
   const idx = jobs.findIndex(x => x.id === completeId);
   if (idx === -1) return;
   const j = jobs[idx];
-  const hJob = { ...j, fg: fg !== '' ? Number(fg) : null, ng: ng !== '' ? Number(ng) : null, status: 'done', completedAt: new Date().toLocaleString('th-TH') };
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const completedAtStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const hJob = { ...j, fg: fg !== '' ? Number(fg) : null, ng: ng !== '' ? Number(ng) : null, status: 'done', completedAt: completedAtStr };
   history.unshift(hJob);
   jobs.splice(idx, 1);
   save();
