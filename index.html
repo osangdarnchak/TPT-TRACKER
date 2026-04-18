@@ -3334,23 +3334,26 @@ function renderHistory(el) {
   // เรียงตาม completedAt ล่าสุดขึ้นก่อน
   const parseCompleted = s => {
     if (!s) return new Date(0);
-    // รองรับ dd/mm/yyyy HH:MM และ yyyy-mm-dd
-    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
-    if (m) return new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+    // dd/mm/yyyy HH:MM หรือ dd/mm/yyyy
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+    if (m) return new Date(m[3], m[2]-1, m[1], m[4]||0, m[5]||0);
+    // dd/mm/yy
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+    if (m) return new Date('20'+m[3], m[2]-1, m[1], m[4]||0, m[5]||0);
+    // yyyy-mm-dd
     return new Date(s);
   };
   let filtered = [...history].sort((a, b) => parseCompleted(b.completedAt) - parseCompleted(a.completedAt));
 
   // กรองตามวันที่เสร็จสิ้น
   if (histDateFilter) {
+    // histDateFilter เป็น yyyy-mm-dd จาก input[type=date]
+    const [fy, fm, fd] = histDateFilter.split('-').map(Number);
     filtered = filtered.filter(j => {
       if (!j.completedAt) return false;
       const d = parseCompleted(j.completedAt);
       if (isNaN(d)) return false;
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const dd = String(d.getDate()).padStart(2,'0');
-      return `${yyyy}-${mm}-${dd}` === histDateFilter;
+      return d.getFullYear() === fy && d.getMonth()+1 === fm && d.getDate() === fd;
     });
   }
 
