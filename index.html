@@ -2126,7 +2126,7 @@
 
 <script>
 // ========== DATA ==========
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycby4wXWCPz_OPcfqqbAO3zwnGyS6wfxYUAvw1MfbZHVGptDlldp-Db-Hfm0LMFCf55oY/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxjkw7POJFl9oa_ZU7vfll87PoZAaEhQUzSkP2c0sg1PAElsJo23hDM-3QjB-2xsqZ_/exec';
 
 // ========== SHEET SYNC ==========
 let isSyncing = false;
@@ -2176,11 +2176,15 @@ async function syncToSheet(action, payload) {
       body: JSON.stringify({ action, ...payload })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (data.error) {
+      console.error('Sheet error:', action, data.error);
+      updateSyncStatus('error');
+      throw new Error(data.error);
+    }
     updateLastUpdated();
     return data;
   } catch(e) {
-    console.error('Sync error:', e);
+    console.error('Sync error:', action, e);
     updateSyncStatus('error');
     return null;
   }
