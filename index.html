@@ -1842,21 +1842,30 @@
 <!-- COMPLETE MODAL -->
 <div class="modal-overlay" id="completeModal" style="display:none">
   <div class="modal">
-    <h2>จบงาน</h2>
+    <h2 id="complete-title">จบงาน</h2>
     <div class="modal-sub" id="complete-sub">กรอกผลผลิต</div>
+    <div id="complete-qty-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:var(--bg3);border-radius:6px;display:none">
+      <span>จำนวนสั่งผลิต: <b id="complete-qty-orig" style="color:var(--text)">—</b></span>
+      &nbsp;·&nbsp;
+      <span>FG+NG สะสม: <b id="complete-qty-sent" style="color:var(--accent)">0</b></span>
+      &nbsp;·&nbsp;
+      <span>คงเหลือ: <b id="complete-qty-remain" style="color:var(--yellow)">—</b></span>
+    </div>
     <div class="form-row">
       <div class="form-group">
         <label>งานดี (FG)</label>
-        <input type="number" id="c-fg" placeholder="0">
+        <input type="number" id="c-fg" placeholder="0" oninput="updateRemainPreview()">
       </div>
       <div class="form-group">
         <label>งานเสีย (NG)</label>
-        <input type="number" id="c-ng" placeholder="0">
+        <input type="number" id="c-ng" placeholder="0" oninput="updateRemainPreview()">
       </div>
     </div>
+    <div id="remain-preview" style="font-size:12px;text-align:right;color:var(--muted);margin-bottom:4px"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeModal('completeModal')">ยกเลิก</button>
-      <button class="btn btn-success" onclick="confirmComplete()">✓ จบงาน</button>
+      <button class="btn" onclick="confirmComplete('partial')" style="border-color:#f472b6;color:#f472b6">📦 ตัดส่ง</button>
+      <button class="btn btn-success" onclick="confirmComplete('done')">✓ จบงาน</button>
     </div>
   </div>
 </div>
@@ -2223,6 +2232,8 @@ function parseJobFromSheet(j) {
     machine: j.machine || '',
     fg: j.fg !== '' ? j.fg : null,
     ng: j.ng !== '' ? j.ng : null,
+    remain: j.remain !== undefined && j.remain !== '' ? Number(j.remain) : null,
+    type: j.type || 'done',
     completedAt: j.completedAt || '',
     updatedAt: j.updatedAt || ''
   };
@@ -3418,10 +3429,18 @@ function renderHistory(el) {
     : filtered.map(j => `
     <div class="history-card">
       <div class="history-info">
-        <div class="hname">${j.partName || '—'}</div>
-        <div class="hmeta">${j.projectNo || ''} (${j.drawing || '—'}) · ${j.customer || ''} · Quantity: ${j.qty || '—'}</div>
+        <div class="hname" style="display:flex;align-items:center;gap:8px">
+          ${j.partName || '—'}
+          ${j.type === 'partial' ? (() => { const isDone = history.some(h => h.id === j.id && h.type === 'done'); return `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;background:${isDone?'rgba(34,197,94,0.15)':'rgba(244,114,182,0.15)'};color:${isDone?'#4ade80':'#f472b6'};border:1px solid ${isDone?'rgba(34,197,94,0.4)':'rgba(244,114,182,0.4)'};flex-shrink:0">ตัดส่ง</span>`; })() : ''}
+        </div>
+        <div class="hmeta">${j.projectNo || ''} (${j.drawing || '—'}) · ${j.customer || ''}</div>
+        <div style="font-size:12px;margin-top:3px">
+          Qty: <b style="color:var(--text)">${j.qty ?? '—'}</b>
+          ${j.remain !== null && j.remain !== undefined ? `&nbsp;·&nbsp; คงเหลือ: <b style="color:${j.remain > 0 ? 'var(--yellow)' : 'var(--green)'}">${j.remain}</b>` : ''}
+        </div>
         <div class="hfg">งานดี (FG): <b style="color:var(--green)">${j.fg ?? '—'}</b> &nbsp; งานเสีย (NG): <b style="color:var(--red)">${j.ng ?? '—'}</b></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">Release: ${formatDate(j.date)} &nbsp;|&nbsp; Due: ${formatDate(j.due)} &nbsp;|&nbsp; เสร็จสิ้น: ${j.completedAt || '—'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Release: ${formatDate(j.date)} &nbsp;|&nbsp; Due: ${formatDate(j.due)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">เสร็จสิ้น: ${j.completedAt || '—'}</div>
       </div>
       ${isAdmin ? `<button class="btn btn-sm" onclick="confirmRestoreJob('${j.id}')">↩ นำกลับ</button>` : ''}
     </div>
@@ -3519,23 +3538,69 @@ function openCompleteModal(id) {
   document.getElementById('complete-sub').textContent = j ? j.partName : '';
   document.getElementById('c-fg').value = '';
   document.getElementById('c-ng').value = '';
+  // แสดง qty info
+  if (j) {
+    const qtyOrig = Number(j.qty) || 0;
+    const sent = calcSentTotal(id);
+    document.getElementById('complete-qty-orig').textContent = qtyOrig;
+    document.getElementById('complete-qty-sent').textContent = sent;
+    document.getElementById('complete-qty-remain').textContent = Math.max(0, qtyOrig - sent);
+    document.getElementById('complete-qty-info').style.display = 'block';
+  }
+  document.getElementById('remain-preview').textContent = '';
   document.getElementById('completeModal').style.display = 'flex';
 }
 
-function confirmComplete() {
+function calcSentTotal(jobId) {
+  // รวม FG+NG จาก History ทุก record ของ job นี้
+  return history
+    .filter(h => h.id === jobId)
+    .reduce((sum, h) => sum + (Number(h.fg)||0) + (Number(h.ng)||0), 0);
+}
+
+function updateRemainPreview() {
+  const j = jobs.find(x => x.id === completeId);
+  if (!j) return;
+  const qtyOrig = Number(j.qty) || 0;
+  const sent = calcSentTotal(completeId);
+  const fg = Number(document.getElementById('c-fg').value) || 0;
+  const ng = Number(document.getElementById('c-ng').value) || 0;
+  const remain = Math.max(0, qtyOrig - sent - fg - ng);
+  document.getElementById('remain-preview').textContent = `คงเหลือหลังนี้: ${remain} ชิ้น`;
+  document.getElementById('remain-preview').style.color = remain <= 0 ? 'var(--green)' : 'var(--yellow)';
+}
+
+function confirmComplete(type) {
   const fg = document.getElementById('c-fg').value;
   const ng = document.getElementById('c-ng').value;
   const idx = jobs.findIndex(x => x.id === completeId);
   if (idx === -1) return;
   const j = jobs[idx];
+  const fgNum = fg !== '' ? Number(fg) : 0;
+  const ngNum = ng !== '' ? Number(ng) : 0;
+  const qtyOrig = Number(j.qty) || 0;
+  const sent = calcSentTotal(completeId);
+  const remain = Math.max(0, qtyOrig - sent - fgNum - ngNum);
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const completedAtStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const hJob = { ...j, fg: fg !== '' ? Number(fg) : null, ng: ng !== '' ? Number(ng) : null, status: 'done', completedAt: completedAtStr };
-  history.unshift(hJob);
-  jobs.splice(idx, 1);
-  save();
-  syncToSheet('moveToHistory', { job: jobToSheet(hJob) });
+
+  if (type === 'partial') {
+    // ตัดส่ง — บันทึก History แต่ Job Card ยังอยู่
+    const hJob = { ...j, fg: fgNum, ng: ngNum, remain, type: 'partial', status: 'done', completedAt: completedAtStr };
+    history.unshift(hJob);
+    // อัปเดต qty ใน Jobs
+    jobs[idx].qty = remain;
+    save();
+    syncToSheet('partialDelivery', { histJob: jobToSheet(hJob), jobId: j.id, newQty: remain });
+  } else {
+    // จบงาน — ย้าย Job ออก
+    const hJob = { ...j, fg: fgNum, ng: ngNum, remain: 0, type: 'done', status: 'done', completedAt: completedAtStr };
+    history.unshift(hJob);
+    jobs.splice(idx, 1);
+    save();
+    syncToSheet('moveToHistory', { job: jobToSheet(hJob) });
+  }
   closeModal('completeModal');
   renderPage();
 }
