@@ -3586,13 +3586,12 @@ function confirmComplete(type) {
   const completedAtStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
   if (type === 'partial') {
-    // ตัดส่ง — บันทึก History แต่ Job Card ยังอยู่
+    // ตัดส่ง — บันทึก History แต่ Job Card ยังอยู่ qty ไม่เปลี่ยน
     const hJob = { ...j, fg: fgNum, ng: ngNum, remain, type: 'partial', status: 'done', completedAt: completedAtStr };
     history.unshift(hJob);
-    // อัปเดต qty ใน Jobs
-    jobs[idx].qty = remain;
+    // ไม่อัปเดต qty ใน Jobs — qty เดิมคงเดิม
     save();
-    syncToSheet('partialDelivery', { histJob: jobToSheet(hJob), jobId: j.id, newQty: remain });
+    syncToSheet('partialDelivery', { histJob: jobToSheet(hJob), jobId: j.id });
   } else {
     // จบงาน — ย้าย Job ออก
     const hJob = { ...j, fg: fgNum, ng: ngNum, remain: 0, type: 'done', status: 'done', completedAt: completedAtStr };
