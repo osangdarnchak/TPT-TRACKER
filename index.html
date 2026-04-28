@@ -2434,6 +2434,15 @@ function parseJobFromSheet(j) {
     const p = j['Process' + i];
     if (p && p.trim()) processes.push(p.trim());
   }
+  // แปลง machine string เป็น machines array
+  let machines = [];
+  if (j.machines) {
+    // ถ้ามี machines field อยู่แล้ว
+    machines = Array.isArray(j.machines) ? j.machines : (typeof j.machines === 'string' ? j.machines.split(',').map(m => m.trim()).filter(m => m) : []);
+  } else if (j.machine && typeof j.machine === 'string') {
+    // แปลง machine string เป็น machines array
+    machines = j.machine.split(',').map(m => m.trim()).filter(m => m);
+  }
   return {
     id: j.id || genId(),
     date: parseSheetDate(j.date),
@@ -2447,7 +2456,7 @@ function parseJobFromSheet(j) {
     dept: j.dept || 'N/A',
     currentProc: j.currentProc !== '' && j.currentProc !== undefined ? Number(j.currentProc) : null,
     status: j.status || 'active',
-    machine: j.machine || '',
+    machines,
     fg: j.fg !== '' ? j.fg : null,
     ng: j.ng !== '' ? j.ng : null,
     remain: j.remain !== undefined && j.remain !== '' ? Number(j.remain) : null,
@@ -2472,6 +2481,13 @@ function jobToSheet(j) {
   (j.processes || []).forEach((p, i) => { obj['Process' + (i+1)] = p; });
   for (let i = (j.processes || []).length + 1; i <= 11; i++) { obj['Process' + i] = ''; }
   delete obj.processes;
+  // แปลง machines array เป็น comma-separated string สำหรับ sheet
+  if (Array.isArray(obj.machines) && obj.machines.length > 0) {
+    obj.machine = obj.machines.join(', ');
+  } else if (!obj.machine && obj.machines) {
+    obj.machine = '';
+  }
+  delete obj.machines;
   return obj;
 }
 
@@ -2668,7 +2684,8 @@ function renderDashboard(el) {
       (j.projectNo || '').toLowerCase().includes(q) ||
       (j.customer || '').toLowerCase().includes(q) ||
       (j.drawing || '').toLowerCase().includes(q) ||
-      (j.machine || '').toLowerCase().includes(q)
+      (j.machine || '').toLowerCase().includes(q) ||
+      (Array.isArray(j.machines) ? j.machines.join(' ').toLowerCase() : '').includes(q)
     );
   }
 
@@ -2807,7 +2824,8 @@ function renderDashJobs() {
       (j.projectNo || '').toLowerCase().includes(q) ||
       (j.customer || '').toLowerCase().includes(q) ||
       (j.drawing || '').toLowerCase().includes(q) ||
-      (j.machine || '').toLowerCase().includes(q)
+      (j.machine || '').toLowerCase().includes(q) ||
+      (Array.isArray(j.machines) ? j.machines.join(' ').toLowerCase() : '').includes(q)
     );
   }
   // อัปเดต clear button
@@ -3104,7 +3122,7 @@ function renderCards(list, draggable = false, orderKey = null, desktop = false) 
 
       <div class="jc-row">
         <span class="jc-label">MC</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${j.machine?'var(--text)':'var(--muted)'}">${j.machine || '—'}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${j.machines && j.machines.length > 0 ? 'var(--text)' : 'var(--muted)'}">${j.machines && j.machines.length > 0 ? j.machines.join(', ') : (j.machine ? j.machine : '—')}</span>
       </div>
 
       <div class="jc-actions">
@@ -3165,7 +3183,7 @@ function renderTable(list, showAddBtn, draggable = false, orderKey = null) {
         ${statusBadge(j.status || 'active', j.id)}
       </td>
       <td class="col-mc cv-mc" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">
-        ${j.machine || '—'}
+        ${j.machines && j.machines.length > 0 ? j.machines.join(', ') : (j.machine ? j.machine : '—')}
       </td>
       <td class="tv-hide cv-action">
         <div style="display:flex;gap:5px;flex-wrap:nowrap">
@@ -3279,16 +3297,22 @@ function initMachineAreas() {
 
 function getMachineJob(machineNo) {
   if (!machineNo) return null;
-  return jobs.find(j => j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done') || null;
+  const mNo = machineNo.trim().toUpperCase();
+  return jobs.find(j => {
+    const machines = Array.isArray(j.machines) ? j.machines : (j.machine ? [j.machine] : []);
+    return machines.some(m => m.trim().toUpperCase() === mNo) && j.status !== 'done';
+  }) || null;
 }
 
 function getQueueForMachine(machineNo) {
   if (!machineNo) return [];
-  const key = 'mcqueue_' + machineNo.trim().toUpperCase();
+  const mNo = machineNo.trim().toUpperCase();
+  const key = 'mcqueue_' + mNo;
   const order = JSON.parse(localStorage.getItem(key) || '[]');
-  const matched = jobs.filter(j =>
-    j.machine && j.machine.trim().toUpperCase() === machineNo.trim().toUpperCase() && j.status !== 'done'
-  );
+  const matched = jobs.filter(j => {
+    const machines = Array.isArray(j.machines) ? j.machines : (j.machine ? [j.machine] : []);
+    return machines.some(m => m.trim().toUpperCase() === mNo) && j.status !== 'done';
+  });
   if (order.length === 0) return matched;
   const orderMap = {};
   order.forEach((id, i) => orderMap[id] = i);
@@ -3865,10 +3889,16 @@ function toggleProcEditor() {
   if (!isOpen) renderProcEditList();
 }
 
-let _selectedMachine = '';
+let _selectedMachines = [];
 
-function renderMachineChipPicker(currentMachine) {
-  _selectedMachine = currentMachine;
+function renderMachineChipPicker(currentMachines) {
+  // currentMachines can be string (for backward compat) or array
+  if (typeof currentMachines === 'string') {
+    _selectedMachines = currentMachines ? [currentMachines] : [];
+  } else {
+    _selectedMachines = Array.isArray(currentMachines) ? [...currentMachines] : [];
+  }
+  
   const el = document.getElementById('machine-chip-picker');
   if (!el) return;
   if (!machineAreas || machineAreas.length === 0) {
@@ -3883,23 +3913,24 @@ function renderMachineChipPicker(currentMachine) {
         <span id="mc-sec-arrow-${ai}" style="font-size:10px;color:var(--muted)">▶</span>
       </button>
       <div id="mc-sec-chips-${ai}" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 4px 4px">
-        <button onclick="selectMachineChip('',${ai})"
-          style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:${!currentMachine?'var(--accent)':'var(--bg3)'};color:${!currentMachine?'#fff':'var(--muted)'};font-size:11px;cursor:pointer;font-family:inherit"
-          id="mc-chip-none-${ai}">— ไม่ระบุ</button>
         ${area.machines.map(m => {
-          const sel = _selectedMachine === m.no;
+          const sel = _selectedMachines.includes(m.no);
           const chipId = 'mc-chip-' + m.no.replace(/[^a-zA-Z0-9]/g,'-');
           return `<button onclick="selectMachineChip('${m.no}',${ai})"
-            style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:${sel?'var(--accent)':'var(--bg3)'};color:${sel?'#fff':'var(--text)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit"
-            id="${chipId}">${m.no}</button>`;
+            style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:${sel?'var(--accent)':'var(--bg3)'};color:${sel?'#fff':'var(--text)'};font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px"
+            id="${chipId}"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid currentColor;border-radius:2px;background:${sel?'currentColor':'transparent'};font-size:10px;line-height:1;color:inherit"></span>${m.no}</button>`;
         }).join('')}
       </div>
     </div>`).join('');
+  
   // ถ้ามี machine ที่เลือกอยู่แล้ว ให้ expand section นั้น
-  if (currentMachine) {
+  if (_selectedMachines.length > 0) {
     machineAreas.forEach((area, ai) => {
-      if (area.machines.some(m => m.no === currentMachine)) {
-        toggleMachineSection(ai);
+      if (area.machines.some(m => _selectedMachines.includes(m.no))) {
+        const chips = document.getElementById(`mc-sec-chips-${ai}`);
+        const arrow = document.getElementById(`mc-sec-arrow-${ai}`);
+        if (chips) chips.style.display = 'flex';
+        if (arrow) arrow.textContent = '▼';
       }
     });
   }
@@ -3910,27 +3941,29 @@ function toggleMachineSection(ai) {
   const arrow = document.getElementById(`mc-sec-arrow-${ai}`);
   if (!chips) return;
   const open = chips.style.display === 'flex';
-  // ปิดทุก section ก่อน
-  if (!open) {
-    machineAreas.forEach((_, i) => {
-      const c = document.getElementById(`mc-sec-chips-${i}`);
-      const a = document.getElementById(`mc-sec-arrow-${i}`);
-      if (c) c.style.display = 'none';
-      if (a) a.textContent = '▶';
-    });
-  }
   chips.style.display = open ? 'none' : 'flex';
   if (arrow) arrow.textContent = open ? '▶' : '▼';
 }
 
 function selectMachineChip(no, ai) {
-  _selectedMachine = no;
-  // อัปเดต style ทุก chip ทั้งหมด
-  document.querySelectorAll('#machine-chip-picker button[id^="mc-chip-"]').forEach(btn => {
-    const isSelected = btn.id === (no ? `mc-chip-${no.replace(/[^a-zA-Z0-9]/g,'-')}` : `mc-chip-none-${ai}`);
+  const idx = _selectedMachines.indexOf(no);
+  if (idx >= 0) {
+    _selectedMachines.splice(idx, 1);
+  } else {
+    _selectedMachines.push(no);
+  }
+  // อัปเดต style ของ chip ที่เปลี่ยนแปลง
+  const chipId = 'mc-chip-' + no.replace(/[^a-zA-Z0-9]/g,'-');
+  const btn = document.getElementById(chipId);
+  if (btn) {
+    const isSelected = _selectedMachines.includes(no);
     btn.style.background = isSelected ? 'var(--accent)' : 'var(--bg3)';
-    btn.style.color = isSelected ? '#fff' : (btn.id.startsWith('mc-chip-none') ? 'var(--muted)' : 'var(--text)');
-  });
+    btn.style.color = isSelected ? '#fff' : 'var(--text)';
+    const checkbox = btn.querySelector('span');
+    if (checkbox) {
+      checkbox.style.background = isSelected ? 'currentColor' : 'transparent';
+    }
+  }
 }
 
 function openEditModal(id) {
@@ -3946,8 +3979,9 @@ function openEditModal(id) {
   document.getElementById('edit-sub').textContent = (_editJob.projectNo || '') + drawing + (_editJob.customer ? ' · ' + _editJob.customer : '');
   document.getElementById('e-status').value = _editJob.status === 'stop' ? 'stop' : 'active';
 
-  // Render machine chip picker
-  renderMachineChipPicker(_editJob.machine || '');
+  // Render machine chip picker - pass machines array (or fallback to old machine field for backward compat)
+  const machineData = Array.isArray(_editJob.machines) ? _editJob.machines : (_editJob.machine ? [_editJob.machine] : []);
+  renderMachineChipPicker(machineData);
 
   // Updated at
   const updEl = document.getElementById('edit-updated-at');
@@ -4176,7 +4210,7 @@ function saveEdit() {
   j.dept = editDept;
   j.processes = [..._editProcs];
   j.currentProc = (editProcIdx !== null && editProcIdx < _editProcs.length) ? editProcIdx : null;
-  j.machine = _selectedMachine || '';
+  j.machines = [..._selectedMachines]; // Save as array
   j.status = document.getElementById('e-status').value;
   // Always save job info fields (now always visible in tab 1)
   j.date = document.getElementById('ei-date').value;
@@ -4318,7 +4352,7 @@ function loadDemoData() {
   ];
   const dateStr = today.toISOString().split('T')[0];
   demos.forEach(d => {
-    jobs.push({ id: genId(), date: dateStr, status: d.status || 'active', machine: '', fg: null, ng: null, ...d });
+    jobs.push({ id: genId(), date: dateStr, status: d.status || 'active', machines: [], fg: null, ng: null, ...d });
   });
   save();
 }
@@ -4374,7 +4408,11 @@ function removeFromQueue(jobId, machineNo, e) {
   e.stopPropagation();
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
-  j.machine = '';
+  // Remove machineNo from machines array
+  if (!Array.isArray(j.machines)) {
+    j.machines = j.machine ? [j.machine] : [];
+  }
+  j.machines = j.machines.filter(m => m.trim().toUpperCase() !== machineNo.trim().toUpperCase());
   stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
@@ -4420,9 +4458,9 @@ function toggleAssignDD(machineNo, e) {
   const listHtml = available.length === 0
     ? `<div class="mc-assign-empty">ไม่มีงานที่สามารถเพิ่มได้</div>`
     : available.map(j => {
-        const currentMc = j.machine
-          ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);padding:1px 5px;border-radius:3px;flex-shrink:0">${j.machine}</span>`
-          : '';
+        const machinesDisplay = j.machines && j.machines.length > 0
+          ? j.machines.map(m => `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);padding:1px 5px;border-radius:3px;flex-shrink:0">${m}</span>`).join('')
+          : (j.machine ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);padding:1px 5px;border-radius:3px;flex-shrink:0">${j.machine}</span>` : '');
         return `<div class="mc-assign-item" onclick="assignJobToMachine('${j.id}','${machineNo}',event)">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
             <div style="min-width:0;flex:1">
@@ -4431,7 +4469,7 @@ function toggleAssignDD(machineNo, e) {
               </div>
               <div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.partName||''} · ${j.customer||''}</div>
             </div>
-            ${currentMc}
+            <div style="display:flex;gap:3px;flex-shrink:0">${machinesDisplay}</div>
           </div>
         </div>`;
       }).join('');
@@ -4464,7 +4502,13 @@ function assignJobToMachine(jobId, machineNo, e) {
   e.stopPropagation();
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
-  j.machine = machineNo;
+  // Add machineNo to machines array (avoid duplicates)
+  if (!Array.isArray(j.machines)) {
+    j.machines = j.machine ? [j.machine] : [];
+  }
+  if (!j.machines.includes(machineNo)) {
+    j.machines.push(machineNo);
+  }
   stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
@@ -4524,7 +4568,13 @@ function quickSetMachine(jobId, machineNo, e) {
   e.stopPropagation();
   const j = jobs.find(x => x.id === jobId);
   if (!j) return;
-  j.machine = machineNo;
+  // Add machineNo to machines array (avoid duplicates)
+  if (!Array.isArray(j.machines)) {
+    j.machines = j.machine ? [j.machine] : [];
+  }
+  if (!j.machines.includes(machineNo)) {
+    j.machines.push(machineNo);
+  }
   stampUpdatedAt(j);
   save();
   syncToSheet('updateJob', { job: jobToSheet(j) });
@@ -5150,7 +5200,7 @@ function renderTvCards(active) {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
         <div class="tv-card-meta" style="flex:1">${j.projectNo||''} · ${j.drawing||''} · ${j.customer||''} · ×${j.qty||'—'}</div>
-        ${j.machine ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);padding:1px 6px;border-radius:4px;flex-shrink:0">${j.machine}</span>` : ''}
+        ${j.machines && j.machines.length > 0 ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);padding:1px 6px;border-radius:4px;flex-shrink:0">${j.machines.join(', ')}</span>` : (j.machine ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);padding:1px 6px;border-radius:4px;flex-shrink:0">${j.machine}</span>` : '')}
       </div>
       <div class="tv-card-row">
         <span class="tv-card-label">Due</span>
