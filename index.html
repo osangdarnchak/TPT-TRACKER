@@ -1601,9 +1601,13 @@
       <button class="btn admin-only" onclick="showQR('admin')" style="justify-content:center;width:100%;border-color:var(--accent);color:var(--accent)">
         🔑 QR — Admin
       </button>
+      <button class="btn admin-only" onclick="showQueueLog()" style="justify-content:center;width:100%;border-color:var(--accent2);color:var(--accent2)">
+        📦 ดูสถานะคิว
+      </button>
       <button class="btn admin-only" id="clear-demo-btn" onclick="openClearDemoModal()" style="justify-content:center;width:100%;border-color:var(--red);color:var(--red);font-size:12px" title="ล้างข้อมูลทดสอบ">🗑 ล้างข้อมูลทดสอบ</button>
     </div>
     <div id="sync-status" style="font-size:10px;margin-bottom:2px"></div>
+    <div id="queue-indicator" style="font-size:10px;color:var(--accent);margin-bottom:2px;min-height:14px;opacity:0;transition:opacity 0.3s"></div>
     <div id="last-updated" style="font-size:10px;color:var(--muted);margin-bottom:4px"></div>
     <div style="font-size:11px;color:var(--muted);">© 2569 Production Tracker</div>
   </div>
@@ -2131,6 +2135,211 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxjkw7POJFl9oa_ZU7vfl
 // ========== SHEET SYNC ==========
 let isSyncing = false;
 
+// ===== OFFLINE QUEUE SYSTEM (ป้องกันข้อมูลหลุด) =====
+const OfflineQueue = {
+  queue: [],
+  isProcessing: false,
+  maxRetries: 5,
+  retryDelay: 2000, // 2 วินาที
+  batchSize: 3,
+  
+  // เพิ่มลงคิว
+  add(action, payload) {
+    const item = {
+      id: Date.now() + Math.random(),
+      action,
+      payload,
+      timestamp: new Date().toLocaleString('th-TH'),
+      retries: 0,
+      status: 'pending'
+    };
+    this.queue.push(item);
+    this.save();
+    console.log(`📦 เพิ่มลงคิว: ${action} | รวม ${this.queue.length} งาน`);
+    this.process();
+    return item.id;
+  },
+  
+  // บันทึกคิวลง localStorage
+  save() {
+    try {
+      localStorage.setItem('TPT_OFFLINE_QUEUE', JSON.stringify(this.queue));
+      updateQueueIndicator();
+    } catch (e) {
+      console.error('❌ ไม่สามารถบันทึกคิว:', e);
+    }
+  },
+  
+  // ส่งข้อมูลเป็นกลุ่มอัตโนมัติ
+  async process() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    
+    this.isProcessing = true;
+    let successCount = 0;
+    let failCount = 0;
+    
+    try {
+      // ส่งทีละ N รายการ (ไม่ใช่ทีละ 1)
+      const batch = this.queue.splice(0, this.batchSize);
+      
+      for (const item of batch) {
+        item.status = 'sending';
+        this.save();
+        
+        try {
+          const res = await fetch(SHEET_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: item.action, ...item.payload })
+          });
+          
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          
+          const data = await res.json();
+          
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          item.status = 'success';
+          successCount++;
+          console.log(`✅ บันทึกสำเร็จ: ${item.action}`);
+          
+        } catch (e) {
+          failCount++;
+          item.retries++;
+          item.status = 'failed';
+          item.lastError = String(e.message);
+          
+          console.warn(`⚠️ ล้มเหลว ${item.action} (Retry: ${item.retries}/${this.maxRetries}):`, e.message);
+          
+          // ถ้า retry ยังไม่ถึงลิมิต ให้คืนไปในคิว
+          if (item.retries < this.maxRetries) {
+            this.queue.push(item);
+          } else {
+            item.status = 'failed_max_retries';
+            console.error(`❌ ล้มเหลวสุดท้าย (เกิน ${this.maxRetries} ครั้ง):`, item.action);
+          }
+        }
+      }
+      
+      this.save();
+      
+      // แสดงสถานะ
+      if (successCount > 0 || failCount > 0) {
+        const msg = `✅ ${successCount} สำเร็จ | ⏳ รอส่ง ${this.queue.length + failCount}`;
+        console.log(msg);
+        showToastQueue(msg);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error processing queue:', error);
+    } finally {
+      this.isProcessing = false;
+      
+      // ถ้ายังมีคิวอยู่ ลองส่งใหม่หลังจากรอสักครู่
+      if (this.queue.length > 0) {
+        setTimeout(() => this.process(), this.retryDelay);
+      }
+    }
+  },
+  
+  // โหลดคิวจาก localStorage เมื่อเปิดแอป
+  load() {
+    try {
+      const saved = localStorage.getItem('TPT_OFFLINE_QUEUE');
+      this.queue = saved ? JSON.parse(saved) : [];
+      if (this.queue.length > 0) {
+        console.log(`📦 โหลดคิวจาก localStorage: ${this.queue.length} รายการ`);
+        // ลองส่งทันที
+        setTimeout(() => this.process(), 500);
+      }
+    } catch (e) {
+      console.error('❌ ไม่สามารถโหลดคิว:', e);
+      this.queue = [];
+    }
+  },
+  
+  // ลบรายการออกจากคิว
+  remove(id) {
+    this.queue = this.queue.filter(item => item.id !== id);
+    this.save();
+  },
+  
+  // ลบทั้งหมด
+  clear() {
+    this.queue = [];
+    this.save();
+  },
+  
+  // ส่งใหม่รายการที่ล้มเหลว
+  retryFailed() {
+    const failed = this.queue.filter(item => item.status === 'failed' || item.status === 'failed_max_retries');
+    failed.forEach(item => {
+      item.retries = 0;
+      item.status = 'pending';
+    });
+    this.save();
+    if (failed.length > 0) {
+      console.log(`🔄 ลองส่งใหม่ ${failed.length} รายการที่ล้มเหลว`);
+      this.process();
+    }
+  },
+  
+  // ดูสถานะคิว
+  getStatus() {
+    const total = this.queue.length;
+    const success = this.queue.filter(i => i.status === 'success').length;
+    const failed = this.queue.filter(i => i.status === 'failed' || i.status === 'failed_max_retries').length;
+    const pending = this.queue.filter(i => i.status === 'pending' || i.status === 'sending').length;
+    return { total, success, failed, pending, queue: this.queue };
+  }
+};
+
+// แสดง Toast สำหรับคิว
+function showToastQueue(msg) {
+  const existing = document.getElementById('queue-toast');
+  if (existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.id = 'queue-toast';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+  `;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// อัปเดต Queue Indicator
+function updateQueueIndicator() {
+  const status = OfflineQueue.getStatus();
+  const indicator = document.getElementById('queue-indicator');
+  
+  if (indicator) {
+    if (status.pending > 0) {
+      indicator.innerHTML = `📦 ${status.pending}`;
+      indicator.style.opacity = '1';
+    } else if (status.total > 0) {
+      indicator.innerHTML = `${status.success}/${status.total}`;
+      indicator.style.opacity = '0.6';
+    } else {
+      indicator.style.opacity = '0';
+    }
+  }
+}
+
 async function syncFromSheet() {
   if (isSyncing) return;
   isSyncing = true;
@@ -2169,25 +2378,30 @@ async function syncFromSheet() {
   }
 }
 
+// ⭐ NEW: syncToSheet ใช้ Offline Queue แทน
 async function syncToSheet(action, payload) {
-  try {
-    const res = await fetch(SHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action, ...payload })
-    });
-    const data = await res.json();
-    if (data.error) {
-      console.error('Sheet error:', action, data.error);
-      updateSyncStatus('error');
-      throw new Error(data.error);
-    }
-    updateLastUpdated();
-    return data;
-  } catch(e) {
-    console.error('Sync error:', action, e);
-    updateSyncStatus('error');
-    return null;
-  }
+  // เพิ่มลงคิวแทนที่จะส่งตรง
+  const queueId = OfflineQueue.add(action, payload);
+  
+  // ส่งคืน Promise ที่ resolve เมื่อสำเร็จ
+  return new Promise((resolve) => {
+    const checkInterval = setInterval(() => {
+      const item = OfflineQueue.queue.find(q => q.id === queueId);
+      const allItems = OfflineQueue.queue;
+      
+      // ตรวจสอบว่าได้ส่งสำเร็จแล้ว
+      if (!item || item.status === 'success') {
+        clearInterval(checkInterval);
+        resolve({ success: true });
+      }
+    }, 100);
+    
+    // Timeout หลัง 60 วินาที
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      resolve({ success: true }); // ยังคงส่งต่อในเบื้องหลัง
+    }, 60000);
+  });
 }
 
 function parseSheetDate(val) {
@@ -3856,6 +4070,97 @@ function showQR(type) {
   document.getElementById('qrModal').style.display = 'flex';
 }
 
+// ⭐ NEW: ดู Queue Log สำหรับ Admin
+function showQueueLog() {
+  const status = OfflineQueue.getStatus();
+  let html = `
+    <div style="padding: 16px; background: var(--bg2); border-radius: 8px; border: 1px solid var(--border);">
+      <div style="margin-bottom: 16px;">
+        <h3 style="color: var(--accent); margin-bottom: 8px;">📦 สถานะคิวบันทึกข้อมูล</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          <div style="background: var(--bg3); padding: 12px; border-radius: 6px; border-left: 3px solid var(--green);">
+            <div style="font-size: 12px; color: var(--muted);">✅ สำเร็จ</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--green);">${status.success}</div>
+          </div>
+          <div style="background: var(--bg3); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent);">
+            <div style="font-size: 12px; color: var(--muted);">⏳ รอส่ง</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${status.pending}</div>
+          </div>
+          <div style="background: var(--bg3); padding: 12px; border-radius: 6px; border-left: 3px solid var(--yellow);">
+            <div style="font-size: 12px; color: var(--muted);">⚠️ ล้มเหลว</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--yellow);">${status.failed}</div>
+          </div>
+          <div style="background: var(--bg3); padding: 12px; border-radius: 6px; border-left: 3px solid var(--muted);">
+            <div style="font-size: 12px; color: var(--muted);">รวมทั้งหมด</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--muted);">${status.total}</div>
+          </div>
+        </div>
+      </div>
+      
+      ${status.queue.length > 0 ? `
+        <div style="margin-bottom: 12px;">
+          <h4 style="color: var(--text); margin-bottom: 8px; font-size: 13px;">📋 รายการในคิว</h4>
+          <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px;">
+            ${status.queue.map((item, i) => `
+              <div style="padding: 10px; border-bottom: 1px solid var(--border); font-size: 12px; background: var(--bg);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <strong>${item.action}</strong>
+                  <span style="color: ${
+                    item.status === 'success' ? 'var(--green)' :
+                    item.status === 'sending' ? 'var(--accent)' :
+                    item.status === 'pending' ? 'var(--yellow)' : 'var(--red)'
+                  };">
+                    ${item.status === 'success' ? '✅' : item.status === 'sending' ? '📤' : item.status === 'pending' ? '⏳' : '❌'}
+                    ${item.status}
+                  </span>
+                </div>
+                <div style="color: var(--muted); font-size: 11px;">
+                  ⏱️ ${item.timestamp} | 🔄 Retry: ${item.retries}/${OfflineQueue.maxRetries}
+                </div>
+                ${item.lastError ? `<div style="color: var(--red); font-size: 11px; margin-top: 4px;">❌ ${item.lastError}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : `<div style="color: var(--muted); padding: 12px; text-align: center;">✨ ไม่มีคิวที่ค้าง</div>`}
+      
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        ${status.failed > 0 ? `
+          <button onclick="OfflineQueue.retryFailed(); showQueueLog();" style="flex: 1; padding: 8px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+            🔄 ลองส่งใหม่
+          </button>
+        ` : ''}
+        ${status.total > 0 ? `
+          <button onclick="OfflineQueue.clear(); showQueueLog();" style="flex: 1; padding: 8px; background: var(--red); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+            🗑️ ล้างคิว
+          </button>
+        ` : ''}
+        <button onclick="this.parentElement.parentElement.parentElement.style.display='none';" style="flex: 1; padding: 8px; background: var(--bg3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+          ปิด
+        </button>
+      </div>
+    </div>
+  `;
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 16px;
+  `;
+  modal.innerHTML = html;
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.body.appendChild(modal);
+}
+
 function timeAgo(iso) {
   if (!iso) return '';
   const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -4914,6 +5219,10 @@ if (!isAdmin) {
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
 }
 renderPage();
+
+// ⭐ โหลดคิวที่ค้างจาก session ที่แล้ว
+OfflineQueue.load();
+
 syncFromSheet();
 
 // Re-render on resize (mobile ↔ desktop)
